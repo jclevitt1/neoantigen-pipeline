@@ -1,0 +1,36 @@
+# --- Secrets: NEVER commit ---
+.env
+*.key
+*_credentials*
+
+# --- Big / derived data: never commit (public sources, re-fetchable) ---
+data/
+*.bam
+*.bai
+*.fastq
+*.fastq.gz
+*.fq.gz
+*.cram
+
+# reference genomes / annotation (huge, downloaded, not authored)
+reference/
+*.fa
+*.fasta
+*.gtf
+*.gff3
+
+# trained models + derived pipeline outputs (re-generatable, keep out of git)
+*.pkl
+*.pickle
+*.vcf
+*.vcf.gz
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# --- OS ---
+.DS_Store
