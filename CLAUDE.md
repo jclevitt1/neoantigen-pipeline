@@ -21,14 +21,30 @@ The pipeline stops exactly where silicon hands off to the lab.
   `.to_graph()` emits structure for visualization.
 - **`Case`** (`NeoantigenVaccineConstructionPipeline/case.py`) — one patient's
   raw inputs + typed derived paths. Swap HCC1395 → COLO829 = one Case.
-- **Two flavors of Stage:** *adapters* (0-acquire, 1, 2a, 2b, 3 — wrap tools like
-  samtools, Mutect2, VEP, OptiType, pVACseq) vs *native* (4-rank, 6-eval,
-  5-construct — our code). Tests differ: native get hard fixture assertions;
-  adapters get contract/smoke checks.
+- **Two flavors of Stage:** *native* (our own logic — 3-candidates, 4-rank,
+  6-eval, 5-construct, plus the default typer/expression paths) vs *adapters*
+  (wrap external tools — 1-input, 2a-variants, and the OptiType/pVACseq paths).
+  Several stages are hybrids via a **pluggable seam** (`Ranker`, `AcquireSource`,
+  `HlaTyper`, `ExpressionSource`, `VariantSource`): a native default that runs
+  today + a tool-backed option that declares its own inputs. Native logic (incl.
+  the tool-output *parsers*, and 2a's VCF *writer*) gets hard fixture assertions
+  in `self_test`; only the tool *execution* defers to Colab. Exception: 2a's
+  *default* is the tool adapter, because somatic calling can't be faked from
+  nothing — the native `fixture` source is opt-in for wiring runs.
 - **Stages are packages** (`stages/<stage>/<stage>_stage.py` + `<approach>/`
   subdirs), each with its own READMEs — see the "Stages layout" section.
-- **`viz.py`** — domain-agnostic; renders any Pipeline to a standalone HTML DAG
-  view (`pipeline_view.html`), AWS-style cards, dashed-amber skip-edges.
+- **`Strategy`** (`core.py`) — marker base for the pluggable seam. Every seam ABC
+  (`Ranker`, `AcquireSource`, `HlaTyper`, `ExpressionSource`, `VariantSource`)
+  inherits it, which makes "which impl is active + what the alternatives are" a
+  first-class, introspectable fact. `Pipeline.to_graph()` auto-derives it — no
+  per-stage wiring — so the diagram documents the seam for free.
+- **`viz.py`** — domain-agnostic; renders any Pipeline to a standalone **interactive**
+  HTML view (`pipeline_view.html`): click a stage → drawer auto-populated from the
+  abstraction (active strategy + alternatives w/ docstrings, live `self_test` dot,
+  IN/OUT, up/down-stream, the stage's class docstring + README.md rendered).
+  Hover traces dependencies; native/adapter filter. Everything is derived from
+  `to_graph()`, so adding a stage or swapping a strategy updates the view with no
+  edits to viz. Regenerate: `viz.write_html(build_pipeline(case), "…/pipeline_view.html")`.
 - Parallelism (concurrent executor for the one 2a‖2b pair) deliberately DEFERRED
   — DAG is explicit, so it's a drop-in later that touches no Stage. Not worth it
   now (only one parallel pair, tools already internally multithreaded).
@@ -43,10 +59,13 @@ The peptide TSV is one table traveling 3→4→6, gaining columns. `6 gates 5`
 
 ## Status
 
-- [x] `core.py` spine — Stage + Pipeline + topo-sort + dry-check hooks + validate + to_graph
+- [x] `core.py` spine — Stage + Pipeline + `Strategy` seam + topo-sort + dry-check
+  hooks + validate + `to_graph` (auto-derives active strategy/alternatives) +
+  `Stage.test_status()` (precise pass/fail/no-test; fixed the old inverted `test()`)
 - [x] `Case`, `checks.py` (cheap validators)
 - [x] All 7 stage **contracts** — I/O + dry checks + description; `run()` stubs raise NotImplementedError
-- [x] `viz.py` + `pipeline_view.html` (read-only DAG view)
+- [x] `viz.py` + `pipeline_view.html` — **interactive**, self-documenting view
+  (click→drawer: strategy+alternatives, live self_test, README/docstring; hover-trace)
 - [~] **Stage logic** — back-half-first:
   - [x] **4-rank** — `RankStage` owns I/O, delegates to a pluggable `Ranker`
     (`stages/rank/logistic_tme/`); default `LogisticTmeRanker` (documented filler).
@@ -63,10 +82,32 @@ The peptide TSV is one table traveling 3→4→6, gaining columns. `6 gates 5`
     `samtools view <url> <region>`, no full download). Contract + DAG wired; **DNA
     URLs verified** (see Data below). `seqc2_wes_dna_manifest()` builds them.
     **Done.**
-  - [ ] Front-half *starters* (2b-hla → 2a-variants/3-candidates on a
-    single-chromosome HCC1395 subset → 1-input) + the `fit_logistic_tme.py`
-    pickle so stage 4 scores live. Front half only needs real-shaped files.
-    RNA/expression deferred: tumor RNA is FASTQ → needs a STAR align first (see Data).
+  - [x] **3-candidates** — NATIVE window generator (`stages/candidates/native/`):
+    pure `windows.py` (mutant protein → covering 8–11mers), `vcf.py` (VEP-CSQ
+    reader, no pysam), pluggable `ExpressionSource` (default `PlaceholderExpression`
+    → `tpm=NA`, needs no RNA so it runs today; `FeatureCountsExpression` stub
+    declares the RNA BAM input for later). Hard `self_test` on a KRAS-G12D fixture
+    VCF passes; `execute()` writes candidates.tsv. Handles missense; frameshift is
+    a documented extension. **Done (MVP).**
+  - [x] **2b-hla** — pluggable `HlaTyper` (`stages/hla/`): default
+    `KnownGenotypeTyper` (published HCC1395/COLO829 genotypes, sourced from
+    Cellosaurus/TCLP PMID 26589293 — zero inputs, runs today) + `OptiTypeTyper`
+    with a real, tested `parse_optitype_tsv` (tool run deferred). Output validated
+    against class-I nomenclature (`HLA-[ABC]*NN:NN`). Hard `self_test` passes;
+    `execute()` writes hla.json. **Done (MVP).**
+  - [x] **2a-variants** — pluggable `VariantSource` (`stages/variants/`): default
+    `Mutect2VepCaller` (declares tumor+normal BAM + reference; call+VEP-annotate
+    execution deferred to Colab, `COMMAND_PLAN` documented, incl. `--plugin
+    Wildtype`) + native `FixtureVariants` (labelled *didactic* KRAS-G12D record on
+    the real KRAS protein — not a sample measurement; zero inputs, runs today).
+    The owned+tested piece is `base.write_annotated_vcf`; `self_test` round-trips
+    it **through stage 3's own parser**, proving the 2a→3 CSQ hand-off is
+    byte-compatible. Verified: 2a-fixture → 3 yields the same 35 candidates.
+    **Done (MVP).**
+  - [ ] Remaining front-half *starters*: 1-input (passthrough sort/index), + the
+    `fit_logistic_tme.py` pickle so stage 4 scores live. Front half only needs
+    real-shaped files. RNA/expression deferred: tumor RNA is FASTQ → needs a STAR
+    align first (see Data), then swap in `FeatureCountsExpression`.
 - [ ] MVP target: one Case end-to-end → ranked+filtered peptides + construct FASTA (back half real, front stubbed/subset)
 
 ## Cloud (Google Colab)

@@ -20,6 +20,7 @@ from .string_of_beads import builder
 
 class ConstructStage(Stage):
     name = "5-construct"
+    kind = "native"
     description = "Assemble surviving peptides (+linkers, codon-optimized) into a vaccine construct."
 
     def __init__(self, case):

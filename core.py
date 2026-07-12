@@ -14,7 +14,54 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
+import inspect
 import time
+
+
+class Strategy(ABC):
+    """Marker base for a pluggable implementation injected into a Stage — the
+    'seam' (e.g. which variant caller, which ranker, which HLA typer).
+
+    Marking a seam ABC as a Strategy costs nothing at runtime but makes the seam
+    a first-class, introspectable concept: `to_graph()` can auto-report which
+    implementation a stage is *currently* using and what the alternatives are,
+    with zero per-stage wiring. Optional `name`/`description` and the common
+    `required_inputs(case)` convention (the DAG edges this impl adds) are declared
+    here so every seam shares them.
+    """
+
+    #: optional human label / one-liner, surfaced in the visualization.
+    name: str = ""
+    description: str = ""
+
+    def required_inputs(self, case) -> list:
+        """Files this implementation makes the host Stage depend on (default none).
+        Overridden by tool-backed strategies to restore the real DAG edge."""
+        return []
+
+
+def _seam_of(cls: type) -> type:
+    """The seam ABC for a concrete Strategy — the class sitting directly under
+    Strategy in its MRO (e.g. Mutect2VepCaller -> VariantSource)."""
+    for c in cls.__mro__:
+        if Strategy in c.__bases__:
+            return c
+    return cls
+
+
+def _concrete_subclasses(cls: type) -> list[type]:
+    """All non-abstract subclasses of `cls` that are currently imported.
+    (viz eagerly imports a stage's approach modules first, so this is complete.)"""
+    seen: set[type] = set()
+
+    def walk(c: type) -> None:
+        for s in c.__subclasses__():
+            if s not in seen:
+                seen.add(s)
+                walk(s)
+
+    walk(cls)
+    return [c for c in seen if not getattr(c, "__abstractmethods__", frozenset())]
 
 
 class Stage(ABC):
@@ -57,6 +104,19 @@ class Stage(ABC):
         Adapter stages override it with a contract/smoke check.
         """
         return None
+
+    def test_status(self) -> tuple[str, str | None]:
+        """('no-test' | 'pass' | 'fail', detail). Distinguishes an *undefined*
+        test from a *passing* one — both return None from self_test() — by
+        checking whether self_test is actually overridden. Stages signal failure
+        by returning a message string (or raising); both become 'fail' here."""
+        if type(self).self_test is Stage.self_test:
+            return ("no-test", None)
+        try:
+            outcome = self.self_test()
+        except Exception as e:  # noqa: BLE001
+            return ("fail", f"{type(e).__name__}: {e}")
+        return ("pass", None) if outcome is None else ("fail", outcome)
 
     # --- universal machinery (don't override) -------------------------------
     def is_cached(self) -> bool:
@@ -189,6 +249,33 @@ class Pipeline:
             raise FileNotFoundError(f"[{self.name}] missing external inputs: {dangling}")
         return [st.name for st in order]
 
+    @staticmethod
+    def _strategies_of(st: Stage) -> list[dict]:
+        """Auto-detect the pluggable Strategy instances a stage holds, and report
+        the active choice + its alternatives + docs — the 'what's going on' the
+        visualization renders. Fully generic: no stage names hardcoded."""
+        out: list[dict] = []
+        for attr, val in vars(st).items():
+            if not isinstance(val, Strategy):
+                continue
+            seam = _seam_of(type(val))
+            options = []
+            for alt in _concrete_subclasses(seam):
+                options.append({
+                    "cls": alt.__name__,
+                    "active": alt is type(val),
+                    "doc": inspect.getdoc(alt) or "",
+                })
+            options.sort(key=lambda o: (not o["active"], o["cls"]))
+            out.append({
+                "attr": attr,                       # e.g. "source", "typer"
+                "seam": seam.__name__,              # e.g. "VariantSource"
+                "seam_doc": inspect.getdoc(seam) or "",
+                "active": type(val).__name__,
+                "options": options,
+            })
+        return out
+
     def to_graph(self) -> dict:
         """Structured DAG for visualization. Nodes carry inputs/outputs (basenames,
         inputs flagged external if no stage produces them) and a layer (longest
@@ -207,11 +294,13 @@ class Pipeline:
             "id": st.name,
             "kind": getattr(st, "kind", "stage"),
             "description": getattr(st, "description", ""),
+            "doc": inspect.getdoc(type(st)) or "",
             "layer": layer[st],
             "inputs": [{"name": Path(i).name,
                         "external": Path(i).resolve() not in producer}
                        for i in st.inputs],
             "outputs": [Path(o).name for o in st.outputs],
+            "strategies": self._strategies_of(st),
         } for st in order]
 
         edges = []
@@ -236,10 +325,10 @@ class Pipeline:
         return results
 
     def test(self) -> dict[str, str]:
-        """Run every stage's self_test(). 'pass' / 'no-test' / raises on failure."""
+        """Run every stage's self_test(). Reports 'pass' / 'no-test' / 'fail: …'."""
         results: dict[str, str] = {}
         for stage in self.stages:
-            outcome = stage.self_test()
-            results[stage.name] = "no-test" if outcome is None else "pass"
+            status, detail = stage.test_status()
+            results[stage.name] = status if detail is None else f"{status}: {detail}"
             print(f"[{self.name}] test {stage.name:<17} {results[stage.name]}")
         return results

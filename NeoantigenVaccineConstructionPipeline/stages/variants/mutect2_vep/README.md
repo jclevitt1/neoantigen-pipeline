@@ -17,7 +17,12 @@ consequence, not just the genome coordinate. Doing annotation at the end of 2a
 means the VCF handed downstream is self-describing — stage 3 reads consequences
 instead of re-computing them.
 
-**Status:** not implemented. MVP plan: run on a **single-chromosome subset** of
-HCC1395/HCC1395BL so a real call completes fast on a laptop.
+**Status:** the **default** stage-2a source (`Mutect2VepCaller`). Contract is
+wired — it declares the tumor+normal BAM and reference inputs and validates them —
+but `produce()` defers execution to Colab (see `COMMAND_PLAN` in `caller.py` for
+the exact command sequence, incl. `--plugin Wildtype` for the `WildtypeProtein`
+CSQ subfield stage 3 needs). MVP plan: run on a **single-chromosome subset** of
+HCC1395/HCC1395BL so a real call completes fast. For a tool-free wiring run, use
+[`../fixture/`](../fixture/) instead.
 
 **Tools:** [GATK/Mutect2](https://gatk.broadinstitute.org/) · [Ensembl VEP](https://www.ensembl.org/vep) · benchmark truth set: SEQC2 (HCC1395).

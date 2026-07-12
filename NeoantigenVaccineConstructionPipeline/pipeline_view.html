@@ -3,70 +3,149 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>neo-vaccine · pipeline</title>
 <style>
-* { box-sizing: border-box; }
-body { margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-       background:#0d1117; color:#e6edf3; }
-.header { padding:16px 20px; border-bottom:1px solid #21262d; display:flex;
-          align-items:baseline; gap:16px; flex-wrap:wrap; }
-.header h1 { font-size:15px; margin:0; font-weight:600; letter-spacing:.3px; }
-.header .sub { color:#7d8590; font-size:12px; }
-.legend { margin-left:auto; display:flex; gap:16px; font-size:11px; color:#7d8590; }
-.legend .k { display:inline-flex; align-items:center; gap:6px; }
-.dot { width:9px; height:9px; border-radius:2px; display:inline-block; }
-.line { width:16px; height:0; border-top:2px solid #4b5563; display:inline-block; }
-.line.skip { border-top:2px dashed #d29922; }
-.scroll { overflow-x:auto; padding:30px 22px; }
-.graph { position:relative; display:flex; gap:70px; min-width:min-content;
-         align-items:flex-start; }
-svg.edges { position:absolute; inset:0; pointer-events:none; overflow:visible; }
-.col { display:flex; flex-direction:column; gap:26px; position:relative; z-index:1; }
-.node { background:#161b22; border:1px solid #30363d; border-left:3px solid #388bfd;
-        border-radius:8px; width:212px; box-shadow:0 1px 2px rgba(0,0,0,.5); }
-.node.native { border-left-color:#3fb950; }
-.nhead { padding:9px 11px; border-bottom:1px solid #21262d; display:flex;
-         align-items:center; justify-content:space-between; }
-.nname { font-size:12.5px; font-weight:600; }
-.ndesc { padding:8px 11px 9px; font-size:10.5px; color:#8b949e; line-height:1.45;
-         border-bottom:1px solid #21262d; white-space:normal; }
-.badge { font-size:9px; text-transform:uppercase; letter-spacing:.5px;
-         padding:2px 6px; border-radius:10px; color:#7d8590; border:1px solid #30363d; }
-.badge.native { color:#3fb950; border-color:#238636; }
-.sect { padding:8px 11px; }
-.lbl { font-size:9px; color:#6e7681; letter-spacing:.6px; margin-bottom:5px; }
-.chip { display:block; font-size:11px; padding:3px 7px; margin:3px 0; background:#0d1117;
-        border:1px solid #21262d; border-radius:5px; color:#c9d1d9;
-        white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.chip.ext { border-style:dashed; color:#8b949e; }
-.chip.out { color:#a5d6ff; }
-path.edge { fill:none; stroke:#4b5563; stroke-width:1.6; }
-path.edge.skip { stroke:#d29922; stroke-dasharray:5 4; stroke-width:1.8; }
-text.elabel { fill:#d29922; font-size:9.5px; font-family:ui-monospace,Menlo,monospace; }
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#0d1117; --line:#21262d; --line2:#30363d;
+  --fg:#e6edf3; --mut:#8b949e; --mut2:#6e7681;
+  --native:#3fb950; --adapter:#388bfd; --skip:#d29922;
+  --pass:#3fb950; --fail:#f85149; --notest:#6e7681;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);color:var(--fg)}
+a{color:#58a6ff}
+.header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+.header h1{font-size:15px;margin:0;font-weight:600;letter-spacing:.3px}
+.header .sub{color:var(--mut);font-size:12px}
+.toolbar{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{font:inherit;font-size:11px;color:var(--mut);background:var(--panel);border:1px solid var(--line2);
+     border-radius:6px;padding:4px 9px;cursor:pointer}
+.btn:hover{color:var(--fg);border-color:#484f58}
+.btn.on{color:var(--fg);border-color:#484f58;background:#1f2630}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--mut);align-items:center}
+.legend .k{display:inline-flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+.line{width:16px;height:0;border-top:2px solid #4b5563;display:inline-block}
+.line.skip{border-top:2px dashed var(--skip)}
+.scroll{overflow-x:auto;padding:30px 22px 60px}
+.graph{position:relative;display:flex;gap:74px;min-width:min-content;align-items:flex-start}
+svg.edges{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.col{display:flex;flex-direction:column;gap:26px;position:relative;z-index:1}
+.node{background:var(--panel);border:1px solid var(--line2);border-left:3px solid var(--adapter);
+      border-radius:8px;width:220px;box-shadow:0 1px 2px rgba(0,0,0,.5);cursor:pointer;
+      transition:border-color .12s,box-shadow .12s,opacity .12s;position:relative}
+.node.native{border-left-color:var(--native)}
+.node:hover{border-color:#484f58}
+.node.sel{border-color:#58a6ff;box-shadow:0 0 0 1px #58a6ff,0 2px 10px rgba(0,0,0,.6)}
+.node.dim{opacity:.28}
+.nhead{padding:9px 11px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.nname{font-size:12.5px;font-weight:600;flex:1}
+.tstat{font-size:11px;line-height:1}
+.tstat.pass{color:var(--pass)} .tstat.fail{color:var(--fail)} .tstat.notest{color:var(--notest)}
+.nsub{padding:6px 11px;font-size:10px;color:var(--mut);border-bottom:1px solid var(--line);
+      display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.kbadge{text-transform:uppercase;letter-spacing:.5px;font-size:9px;padding:1px 6px;border-radius:10px;
+        border:1px solid var(--line2);color:var(--mut)}
+.kbadge.native{color:var(--native);border-color:#238636}
+.kbadge.adapter{color:var(--adapter);border-color:#1f6feb}
+.strat{color:#d2a8ff}
+.ndesc{padding:8px 11px 9px;font-size:10.5px;color:var(--mut);line-height:1.45;border-bottom:1px solid var(--line)}
+.sect{padding:7px 11px}
+.lbl{font-size:9px;color:var(--mut2);letter-spacing:.6px;margin-bottom:5px}
+.chip{display:block;font-size:11px;padding:3px 7px;margin:3px 0;background:var(--panel2);
+      border:1px solid var(--line);border-radius:5px;color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.ext{border-style:dashed;color:var(--mut)}
+.chip.out{color:#a5d6ff}
+.nfoot{padding:6px 11px;font-size:10px;color:var(--mut2);border-top:1px solid var(--line)}
+path.edge{fill:none;stroke:#4b5563;stroke-width:1.6}
+path.edge.skip{stroke:var(--skip);stroke-dasharray:5 4;stroke-width:1.8}
+path.edge.hot{stroke:#58a6ff;stroke-width:2.6}
+path.edge.hot.skip{stroke:#e3b341}
+path.edge.fade{opacity:.12}
+text.elabel{fill:var(--skip);font-size:9.5px;font-family:ui-monospace,Menlo,monospace}
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(1,4,9,.55);opacity:0;pointer-events:none;transition:opacity .16s;z-index:5}
+.scrim.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(560px,94vw);background:var(--panel);
+        border-left:1px solid var(--line2);transform:translateX(100%);transition:transform .18s ease;
+        z-index:6;display:flex;flex-direction:column}
+.drawer.show{transform:none}
+.dhead{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.dhead h2{margin:0;font-size:15px}
+.dclose{margin-left:auto;background:none;border:none;color:var(--mut);font-size:20px;cursor:pointer;line-height:1}
+.dbody{overflow-y:auto;padding:18px 20px 60px}
+.dsec{margin-bottom:22px}
+.dsec h3{font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--mut2);margin:0 0 9px;font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 9px;border-radius:12px;
+      border:1px solid var(--line2);color:var(--mut);margin:0 6px 6px 0}
+.pill.pass{color:var(--pass);border-color:#238636} .pill.fail{color:var(--fail);border-color:#8b2c2c}
+.opt{border:1px solid var(--line);border-radius:7px;padding:10px 12px;margin-bottom:8px;background:var(--panel2)}
+.opt.active{border-color:#8957e5;box-shadow:0 0 0 1px rgba(137,87,229,.4)}
+.opt .ohead{display:flex;align-items:center;gap:8px;font-size:12px}
+.opt .oname{font-weight:600;color:#d2a8ff}
+.opt .otag{font-size:9px;text-transform:uppercase;letter-spacing:.5px;padding:1px 6px;border-radius:10px}
+.opt.active .otag{color:var(--native);border:1px solid #238636}
+.opt .otag.alt{color:var(--mut);border:1px solid var(--line2)}
+.opt .odoc{font-size:11px;color:var(--mut);line-height:1.5;margin-top:7px;white-space:pre-wrap}
+.flow{display:flex;flex-wrap:wrap;gap:6px}
+.nav{font-size:11px;padding:3px 9px;border:1px solid var(--line2);border-radius:6px;color:#c9d1d9;
+     background:var(--panel2);cursor:pointer}
+.nav:hover{border-color:#58a6ff;color:#fff}
+.md{font-size:12px;line-height:1.6;color:#c9d1d9}
+.md h1,.md h2,.md h3,.md h4{color:var(--fg);margin:16px 0 8px;line-height:1.3}
+.md h1{font-size:15px} .md h2{font-size:13.5px} .md h3{font-size:12.5px} .md h4{font-size:12px}
+.md p{margin:8px 0}
+.md code{background:#0b0f14;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:11px}
+.md pre{background:#0b0f14;border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto}
+.md pre code{background:none;border:none;padding:0}
+.md ul{margin:8px 0;padding-left:20px} .md li{margin:3px 0}
+.md blockquote{border-left:3px solid var(--line2);margin:8px 0;padding:2px 12px;color:var(--mut)}
+.md table{border-collapse:collapse;margin:10px 0;font-size:11px;display:block;overflow-x:auto}
+.md th,.md td{border:1px solid var(--line2);padding:5px 9px;text-align:left}
+.md th{background:#161b22}
+.md hr{border:none;border-top:1px solid var(--line);margin:14px 0}
+.empty{color:var(--mut2);font-size:11px;font-style:italic}
 </style></head>
 <body>
 <div class="header">
   <h1>neo-vaccine</h1>
-  <span class="sub">read-only pipeline view</span>
-  <div class="legend">
-    <span class="k"><span class="dot" style="background:#3fb950"></span>native (ours)</span>
-    <span class="k"><span class="dot" style="background:#388bfd"></span>adapter (wraps tool)</span>
-    <span class="k"><span class="line"></span>dependency</span>
-    <span class="k"><span class="line skip"></span>skips a stage</span>
+  <span class="sub">interactive pipeline view · click a stage</span>
+  <div class="toolbar">
+    <div class="legend">
+      <span class="k"><span class="dot" style="background:var(--native)"></span>native</span>
+      <span class="k"><span class="dot" style="background:var(--adapter)"></span>adapter</span>
+      <span class="k"><span class="line"></span>dep</span>
+      <span class="k"><span class="line skip"></span>skip</span>
+    </div>
+    <button class="btn on" data-filter="all">all</button>
+    <button class="btn" data-filter="native">native</button>
+    <button class="btn" data-filter="adapter">adapter</button>
   </div>
 </div>
 <div class="scroll"><div class="graph" id="graph">
   <svg class="edges" id="edges"><defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/></marker>
+    <marker id="arrowhot" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#58a6ff"/></marker>
     <marker id="arrowskip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M0,0 L10,5 L0,10 z" fill="#d29922"/></marker>
   </defs></svg>
 </div></div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="dhead"><h2 id="dtitle"></h2><button class="dclose" id="dclose">&times;</button></div>
+  <div class="dbody" id="dbody"></div>
+</aside>
+
 <script>
-const GRAPH = {"name": "neo-vaccine", "nodes": [{"id": "1-input", "kind": "stage", "description": "Normalize raw sequencing (FASTQ/BAM/CRAM) into three aligned BAMs.", "layer": 0, "inputs": [{"name": "tumor.fastq.gz", "external": true}, {"name": "normal.fastq.gz", "external": true}, {"name": "tumor_rna.fastq.gz", "external": true}], "outputs": ["tumor_dna.bam", "normal_dna.bam", "tumor_rna.bam"]}, {"id": "2a-variants", "kind": "stage", "description": "The 'diff': somatic variants (tumor - normal), annotated with protein consequences.", "layer": 1, "inputs": [{"name": "tumor_dna.bam", "external": false}, {"name": "normal_dna.bam", "external": false}, {"name": "genome.fa", "external": true}], "outputs": ["somatic.annotated.vcf"]}, {"id": "2b-hla", "kind": "stage", "description": "Type the patient's MHC-I alleles (HLA-A/B/C) from the normal sample.", "layer": 1, "inputs": [{"name": "normal_dna.bam", "external": false}], "outputs": ["hla.json"]}, {"id": "3-candidates", "kind": "stage", "description": "Translate mutations into mutant peptides (8-11mers), tagged with RNA expression.", "layer": 2, "inputs": [{"name": "somatic.annotated.vcf", "external": false}, {"name": "tumor_rna.bam", "external": false}], "outputs": ["candidates.tsv"]}, {"id": "4-rank", "kind": "native", "description": "Score peptides by MHC binding + immunogenicity (the Model A/B ranker).", "layer": 3, "inputs": [{"name": "candidates.tsv", "external": false}, {"name": "hla.json", "external": false}], "outputs": ["ranked.tsv"]}, {"id": "6-eval", "kind": "native", "description": "Filter peptides: autoimmunity, clonality, manufacturability. Gates the construct.", "layer": 4, "inputs": [{"name": "ranked.tsv", "external": false}, {"name": "proteome.fa", "external": true}], "outputs": ["filtered.tsv"]}, {"id": "5-construct", "kind": "stage", "description": "Assemble surviving peptides (+linkers, codon-optimized) into a vaccine construct.", "layer": 5, "inputs": [{"name": "filtered.tsv", "external": false}], "outputs": ["construct.fasta", "construct.json"]}], "edges": [{"src": "3-candidates", "dst": "4-rank", "file": "candidates.tsv", "skip": false}, {"src": "2b-hla", "dst": "4-rank", "file": "hla.json", "skip": true}, {"src": "4-rank", "dst": "6-eval", "file": "ranked.tsv", "skip": false}, {"src": "6-eval", "dst": "5-construct", "file": "filtered.tsv", "skip": false}, {"src": "1-input", "dst": "2a-variants", "file": "tumor_dna.bam", "skip": false}, {"src": "1-input", "dst": "2a-variants", "file": "normal_dna.bam", "skip": false}, {"src": "1-input", "dst": "2b-hla", "file": "normal_dna.bam", "skip": false}, {"src": "2a-variants", "dst": "3-candidates", "file": "somatic.annotated.vcf", "skip": false}, {"src": "1-input", "dst": "3-candidates", "file": "tumor_rna.bam", "skip": true}]};
+const GRAPH = {"name": "neo-vaccine", "nodes": [{"id": "0-acquire", "kind": "adapter", "description": "Stage the three raw sample files (on-disk, or region-sliced from a remote source).", "doc": "A single typed-file transform.\n\nSubclass and implement three things: `inputs`, `outputs`, `run`.\nThe base class handles the boring, universal parts \u2014 skip-if-cached and\ncontract validation (inputs must exist before; outputs must exist after).", "layer": 0, "inputs": [], "outputs": ["t", "n", "r"], "strategies": [{"attr": "source", "seam": "AcquireSource", "seam_doc": "Marker base for a pluggable implementation injected into a Stage \u2014 the\n'seam' (e.g. which variant caller, which ranker, which HLA typer).\n\nMarking a seam ABC as a Strategy costs nothing at runtime but makes the seam\na first-class, introspectable concept: `to_graph()` can auto-report which\nimplementation a stage is *currently* using and what the alternatives are,\nwith zero per-stage wiring. Optional `name`/`description` and the common\n`required_inputs(case)` convention (the DAG edges this impl adds) are declared\nhere so every seam shares them.", "active": "OnDiskSource", "options": [{"cls": "OnDiskSource", "active": true, "doc": "Marker base for a pluggable implementation injected into a Stage \u2014 the\n'seam' (e.g. which variant caller, which ranker, which HLA typer).\n\nMarking a seam ABC as a Strategy costs nothing at runtime but makes the seam\na first-class, introspectable concept: `to_graph()` can auto-report which\nimplementation a stage is *currently* using and what the alternatives are,\nwith zero per-stage wiring. Optional `name`/`description` and the common\n`required_inputs(case)` convention (the DAG edges this impl adds) are declared\nhere so every seam shares them."}, {"cls": "Seqc2SliceSource", "active": false, "doc": "Marker base for a pluggable implementation injected into a Stage \u2014 the\n'seam' (e.g. which variant caller, which ranker, which HLA typer).\n\nMarking a seam ABC as a Strategy costs nothing at runtime but makes the seam\na first-class, introspectable concept: `to_graph()` can auto-report which\nimplementation a stage is *currently* using and what the alternatives are,\nwith zero per-stage wiring. Optional `name`/`description` and the common\n`required_inputs(case)` convention (the DAG edges this impl adds) are declared\nhere so every seam shares them."}]}], "readme": "# Stage 0 \u2014 Acquire\n\n**Job:** make the Case's three raw sample files (`tumor_dna`, `normal_dna`,\n`tumor_rna`) exist, then hand off to stage 1. Sits at the front of the DAG:\n\n    0-acquire \u2192 1-input \u2192 2a/2b \u2192 3 \u2192 4 \u2192 6 \u2192 5\n\n## Why it's a stage (and pluggable)\n\nGetting the data is a real step with real trade-offs \u2014 most of all **where the\nbytes live**. So it's a stage with two interchangeable `AcquireSource` approaches\n(same pattern as `rank`'s pluggable `Ranker`):\n\n- [`on_disk/`](on_disk/) \u2014 **default.** Files are already staged (local dir,\n  mounted Drive, or cloud scratch). Verifies presence; fetches nothing.\n- [`seqc2_slice/`](seqc2_slice/) \u2014 **region-slice** the remote SEQC2 aligned BAMs\n  with `samtools view <url> <region>`. Pulls one chromosome (~hundreds of MB) not\n  the whole genome (100s of GB). This is the cloud, disk-cheap path.\n\n## The disk-space design (why this matters here)\n\nFull HCC1395 WGS is 100s of GB \u2014 never needed. Neoantigens come from *coding*\nmutations, and analysis is **region-local**: slicing to chr21 keeps *full depth*\non that chromosome (a complete, correct analysis of it) while touching a few GB.\nGenome-scale = the same job run per-region and merged (scatter-gather), bounded by\nwhatever CPU/scratch you have \u2014 never the whole genome resident at once.\n\n**Shared heavy assets** (reference genome + index, annotation cache, proteome) are\nNOT acquired here \u2014 they're downloaded once by `cloud/` setup and reused across\nevery Case. This stage only handles per-case *sample* data.\n\n## Bonus: SEQC2 ships ALIGNED BAMs\n\nBecause the source BAMs are already BWA-MEM aligned, the slice yields an aligned\nBAM directly \u2014 so **stage 1 (normalize) is a light sort/index passthrough** for the\nMVP and we skip alignment (bwa/STAR) entirely.\n\n## I/O contract\n\n| | |\n|---|---|\n| **Inputs** | none (external roots are remote / pre-staged) |\n| **Outputs** | `tumor_dna`, `normal_dna`, `tumor_rna` (BAMs) |\n| **Dry checks** | outputs non-empty + BGZF |\n| **Caching** | empty inputs \u2192 \"cached\" iff outputs exist, so on-disk runs skip instantly |\n\n## Data source\n\nHCC1395 / HCC1395BL, SEQC2 project **SRA SRP162370** (public, no approval).\n", "test": {"status": "no-test", "detail": ""}}, {"id": "1-input", "kind": "adapter", "description": "Normalize raw sequencing (FASTQ/BAM/CRAM) into three aligned BAMs.", "doc": "A single typed-file transform.\n\nSubclass and implement three things: `inputs`, `outputs`, `run`.\nThe base class handles the boring, universal parts \u2014 skip-if-cached and\ncontract validation (inputs must exist before; outputs must exist after).", "layer": 1, "inputs": [{"name": "t", "external": false}, {"name": "n", "external": false}, {"name": "r", "external": false}], "outputs": ["tumor_dna.bam", "normal_dna.bam", "tumor_rna.bam"], "strategies": [], "readme": "# Stage 1 \u2014 Input / Normalize\n\n**Job:** take whatever raw sequencing files a data source gave us and turn them\ninto a uniform starting point: **three aligned BAMs** \u2014 tumor DNA, normal DNA,\ntumor RNA.\n\n## Why this stage exists\n\nPublic datasets ship in different formats: FASTQ(.gz) (raw reads, from SRA/dbGaP),\nBAM (already aligned, from GDC/TCGA), or CRAM (compressed BAM). Everything\ndownstream assumes aligned BAMs. This stage absorbs that variability so no later\nstage has to care where the data came from.\n\n## The three samples (and why three)\n\n- **tumor DNA** \u2014 the cancer's genome. Half of \"the diff.\"\n- **normal DNA** \u2014 the patient's healthy/germline genome (usually from blood). The\n  control: it tells us the patient's *inherited* DNA so stage 2a can subtract it.\n- **tumor RNA** \u2014 what the tumor is actually *transcribing*. Stage 3 uses it to\n  drop mutations in genes that aren't expressed (no RNA \u2192 no protein \u2192 no target).\n\n## Key concept: DNA vs RNA alignment differ\n\nDNA aligns contiguously to the genome. RNA does **not** \u2014 introns are spliced out,\nso a single RNA read can map across a gap of thousands of bases. RNA therefore\nneeds a **splice-aware** aligner (STAR/HISAT2), while DNA uses a straight aligner\n(bwa). Getting this wrong silently corrupts expression numbers.\n\n## I/O contract\n\n| | |\n|---|---|\n| **Inputs** | `tumor_dna`, `normal_dna`, `tumor_rna` (external raw files) |\n| **Outputs** | `tumor_dna.bam`, `normal_dna.bam`, `tumor_rna.bam` |\n| **Dry checks** | inputs non-empty + known raw extension; outputs BGZF magic |\n\n## Approaches\n\n- [`align_bwa_star/`](align_bwa_star/) \u2014 bwa for DNA, STAR for RNA (planned).\n", "test": {"status": "no-test", "detail": ""}}, {"id": "2a-variants", "kind": "adapter", "description": "The 'diff': somatic variants (tumor - normal), annotated with protein consequences.", "doc": "A single typed-file transform.\n\nSubclass and implement three things: `inputs`, `outputs`, `run`.\nThe base class handles the boring, universal parts \u2014 skip-if-cached and\ncontract validation (inputs must exist before; outputs must exist after).", "layer": 2, "inputs": [{"name": "tumor_dna.bam", "external": false}, {"name": "normal_dna.bam", "external": false}, {"name": "ref.fa", "external": true}], "outputs": ["somatic.annotated.vcf"], "strategies": [{"attr": "source", "seam": "VariantSource", "seam_doc": "How stage 2a obtains the annotated somatic VCF. A pluggable seam like\nstage 4's Ranker / 2b's HlaTyper: each source declares its own inputs, so the\nDAG shows real edges only for the source in use.", "active": "Mutect2VepCaller", "options": [{"cls": "Mutect2VepCaller", "active": true, "doc": "Real somatic calling + annotation. Deferred to Colab (see COMMAND_PLAN)."}, {"cls": "FixtureVariants", "active": false, "doc": "Emit DEMO_VARIANTS as an annotated VCF. Zero inputs; runs today.\n\nOpt-in only: build the pipeline with `variant_source=FixtureVariants()` for a\ntool-free end-to-end wiring run. The default source is the real Mutect2+VEP\nadapter."}]}], "readme": "# Stage 2a \u2014 Somatic Variant Calling (\"the diff\")\n\n**Job:** find the mutations that are unique to the cancer \u2014 present in the tumor\nDNA but not in the patient's normal DNA \u2014 and annotate what each one does to a\nprotein.\n\n## The core idea: tumor minus normal\n\nBoth DNA samples are aligned to the same reference genome. At every position you\nask one question:\n\n> Does the **tumor** show a DNA letter the **normal** doesn't?\n\nThe normal sample is the control \u2014 it captures the patient's *inherited* (germline)\nDNA, quirks and all. Anything in the tumor but not the normal is **somatic**: the\ncancer acquired it. That difference is \"the diff.\" A caller does the statistics to\nseparate a real mutation from a sequencing error (is the alt letter in 40% of 30\nreads, or 1 of 2?).\n\n## Two steps folded into one stage\n\n1. **Call** \u2014 produce a VCF of somatic positions + their ref\u2192alt change.\n2. **Annotate** \u2014 for each mutation, *which gene, and does it change an amino\n   acid?* Most of the genome is non-coding or silent; those get dropped. The\n   annotated VCF carries protein consequences (CSQ/ANN) so stage 3 can translate\n   directly instead of re-deriving them.\n\n## Units reminder\n\nDNA letters are **nucleotides** (`A/C/G/T`). A triplet (codon) of nucleotides\nencodes one **amino acid**. A mutation that changes an amino acid is what we care\nabout \u2014 it's the seed of a neoantigen.\n\n## I/O contract\n\n| | |\n|---|---|\n| **Inputs** | `tumor_dna.bam`, `normal_dna.bam`, `reference` (genome FASTA) \u2014 *declared by the source in use; the fixture source needs none* |\n| **Outputs** | `somatic.annotated.vcf` (VEP-style CSQ with `WildtypeProtein`) |\n| **Dry checks** | inputs BGZF/non-empty (real source); output is a `##fileformat=VCF` **advertising a CSQ header** |\n\nAlso carries per-mutation **allele frequency** (FORMAT/AF) \u2192 later becomes the\n**CCF** that stage 6 uses to judge clonal vs subclonal.\n\nThe caller+annotator is a **pluggable seam** (`base.py`, like stage 4's `Ranker`\nand 2b's `HlaTyper`): each source declares its own inputs. The one piece 2a *owns*\nand tests today is `write_annotated_vcf` \u2014 the writer that emits exactly the CSQ\nlayout stage 3 reads. `self_test` round-trips it **through stage 3's own parser**,\nso the 2a\u21923 hand-off is proven byte-compatible with zero tools.\n\nUnlike 2b (published germline genotypes) and stage 3's expression (honest\nplaceholder), somatic calling **can't be faked from nothing** \u2014 so the *default*\nsource is the real tool adapter, deferred to Colab. A fixture source exists only\nto wire/test the rest of the pipeline.\n\n## Approaches\n\n- [`mutect2_vep/`](mutect2_vep/) \u2014 **default**: Mutect2 (call) + VEP (annotate,\n  `--plugin Wildtype`). Declares the BAM+reference inputs; execution defers to\n  Colab (see its `COMMAND_PLAN`). The honest scientific path.\n- [`fixture/`](fixture/) \u2014 **opt-in, native**: a labelled *didactic* variant\n  (KRAS G12D on the real KRAS protein \u2014 **not** a sample measurement). Zero\n  inputs, runs today, for a tool-free end-to-end run. Pass\n  `variant_source=FixtureVariants()`.\n", "test": {"status": "pass", "detail": ""}}, {"id": "2b-hla", "kind": "adapter", "description": "Type the patient's MHC-I alleles (HLA-A/B/C) from the normal sample.", "doc": "A single typed-file transform.\n\nSubclass and implement three things: `inputs`, `outputs`, `run`.\nThe base class handles the boring, universal parts \u2014 skip-if-cached and\ncontract validation (inputs must exist before; outputs must exist after).", "layer": 0, "inputs": [], "outputs": ["hla.json"], "strategies": [{"attr": "typer", "seam": "HlaTyper", "seam_doc": "Marker base for a pluggable implementation injected into a Stage \u2014 the\n'seam' (e.g. which variant caller, which ranker, which HLA typer).\n\nMarking a seam ABC as a Strategy costs nothing at runtime but makes the seam\na first-class, introspectable concept: `to_graph()` can auto-report which\nimplementation a stage is *currently* using and what the alternatives are,\nwith zero per-stage wiring. Optional `name`/`description` and the common\n`required_inputs(case)` convention (the DAG edges this impl adds) are declared\nhere so every seam shares them.", "active": "KnownGenotypeTyper", "options": [{"cls": "KnownGenotypeTyper", "active": true, "doc": "Look up a published HLA genotype by `case.sample_id`. Needs no inputs."}, {"cls": "OptiTypeTyper", "active": false, "doc": "Type HLA-I from the normal BAM with OptiType (tool run deferred to Colab).\n\nDeclares the normal DNA BAM as a required input, so wiring this in makes the\n`1-input \u2192 2b-hla` DAG edge real. `type()` would run OptiType then hand its\nresult TSV to `parse_optitype_tsv`."}]}], "readme": "# Stage 2b \u2014 HLA Typing\n\n**Job:** read out the patient's own **MHC-I alleles** (the ~6 classical ones) from\nthe normal sample, so stage 4 knows which molecules will present the peptides.\n\n## Why this is mandatory, not optional\n\nBinding is **allele-specific**. An MHC-I molecule is a groove that grips some\npeptides and not others, and *which* peptides depends entirely on the exact allele.\nEvery human carries a personal set of these alleles. Predict binding against the\nwrong alleles and every downstream score is meaningless. This stage is what makes\nthe vaccine *personalized* at the presentation level.\n\n## What an \"allele\" is here\n\nHumans have three classical MHC-I genes \u2014 **HLA-A, HLA-B, HLA-C** \u2014 and you inherit\ntwo copies of each (one per parent), so ~**6 alleles** total. Each allele has a\nstandardized name like `HLA-A*02:01`. Some people are homozygous at a gene, giving\nfewer than 6 distinct alleles.\n\n## Read from the *normal* sample \u2014 why\n\nHLA type is inherited (germline), so you read it from normal DNA, not tumor.\n(Tumors can even *lose* an HLA allele \u2014 \"LOH\" \u2014 but the patient's baseline type\ncomes from normal.)\n\n## I/O contract\n\n| | |\n|---|---|\n| **Inputs** | `normal_dna.bam` *(only when a read-based typer is used; the default `known` typer needs none)* |\n| **Outputs** | `hla.json` \u2014 tiny; `{\"sample_id\":\u2026, \"alleles\": [\"HLA-A*02:01\", \u2026], \"source\":\u2026}` |\n| **Dry checks** | input BGZF (read-based typer); output valid JSON + every allele in class-I nomenclature (`HLA-[ABC]*NN:NN`) |\n\nThe typer is a **pluggable seam** (`base.py`, like stage 4's `Ranker`): it declares\nits own required inputs, so with the default `known` typer stage 2b has zero inputs\nand runs today; swap in `optitype` and the normal BAM becomes a real DAG input.\n\n## Approaches\n\n- [`known/`](known/) \u2014 **default**: published HLA genotype by `sample_id` (HCC1395,\n  COLO829), sourced from Cellosaurus/TCLP. No reads, no tool \u2014 runs today.\n- [`optitype/`](optitype/) \u2014 OptiType HLA-I typing from sequencing reads. Output\n  **parser is real and tested now**; the tool run defers to Colab.\n", "test": {"status": "pass", "detail": ""}}, {"id": "3-candidates", "kind": "native", "description": "Translate mutations into mutant peptides (8-11mers), tagged with RNA expression.", "doc": "A single typed-file transform.\n\nSubclass and implement three things: `inputs`, `outputs`, `run`.\nThe base class handles the boring, universal parts \u2014 skip-if-cached and\ncontract validation (inputs must exist before; outputs must exist after).", "layer": 3, "inputs": [{"name": "somatic.annotated.vcf", "external": false}], "outputs": ["candidates.tsv"], "strategies": [{"attr": "expression", "seam": "ExpressionSource", "seam_doc": "Marker base for a pluggable implementation injected into a Stage \u2014 the\n'seam' (e.g. which variant caller, which ranker, which HLA typer).\n\nMarking a seam ABC as a Strategy costs nothing at runtime but makes the seam\na first-class, introspectable concept: `to_graph()` can auto-report which\nimplementation a stage is *currently* using and what the alternatives are,\nwith zero per-stage wiring. Optional `name`/`description` and the common\n`required_inputs(case)` convention (the DAG edges this impl adds) are declared\nhere so every seam shares them.", "active": "PlaceholderExpression", "options": [{"cls": "PlaceholderExpression", "active": true, "doc": "Default: no RNA available yet. Every candidate gets tpm='NA' and survives.\n\nHonest MVP behaviour \u2014 the alternative (dropping everything, or inventing a\nnumber) is worse. When RNA lands, swap in FeatureCountsExpression."}, {"cls": "FeatureCountsExpression", "active": false, "doc": "Real expression from the tumor RNA BAM (planned).\n\nWould quantify TPM per gene/transcript over `case.tumor_rna_bam` and look it\nup here. Declares the RNA BAM as a required input so the DAG orders 1-input\nbefore 3-candidates for real."}]}], "readme": "# Stage 3 \u2014 Candidate Generation\n\n**Job:** turn each protein-changing mutation into the short peptides that could\nactually be shown to the immune system, and tag each with how strongly its gene is\nexpressed.\n\n## The sliding window\n\nA mutation swaps one amino acid in a protein. That single change creates short\nstretches the immune system has **never seen** \u2014 they exist in no normal human\nprotein. To enumerate them, slide an **8\u201311 amino-acid** window across the mutated\nposition:\n\n```\nnormal protein:   ... L Q A [G] R T V ...\nmutant protein:   ... L Q A [E] R T V ...     \u2190 one letter changed\ncandidate 9mers containing E:  LQAERTV.. , QAERTV.. , AERTV.. , ...\n```\n\n**Why 8\u201311:** that's the length MHC-I physically holds (9 is most common). Each\nwindow that *contains the mutation* is a neoantigen candidate.\n\n## Why we don't hand-filter the window (anchor residues)\n\nYou might expect a rule like \"position 2 must be L/M.\" That preference is real\n(**anchor residues** at position 2 and the C-terminus), but it's **allele-specific\nand soft**, so we don't prefilter on it. Instead every window is generated here and\nthe **binding predictor in stage 4** \u2014 which has learned anchor preferences per\nallele \u2014 narrows them by *score*. Narrowing by scoring beats a brittle letter rule.\n\n## Expression tagging\n\nEach candidate is tagged with **TPM** (transcripts per million) from the tumor RNA\nBAM. If the gene isn't transcribed, there's no protein and no target \u2014 drop it.\nSilent-but-present mutations die here. (Complementary metric: mutant-allele\nfraction in RNA \u2014 how often the mutated copy is the one transcribed.)\n\n## I/O contract\n\n| | |\n|---|---|\n| **Inputs** | `somatic.annotated.vcf`, `tumor_rna.bam` |\n| **Outputs** | `candidates.tsv` \u2014 at minimum `peptide`, `tpm` (later stages add columns) |\n| **Dry checks** | input VCF + BGZF RNA; output TSV has `peptide`,`tpm` |\n\nThe `candidates.tsv` is the table that travels 3 \u2192 4 \u2192 6, gaining columns at each\nstage.\n\n## Approaches\n\n- [`native/`](native/) \u2014 **our own** window generator (default). Pure sliding-window\n  logic + a minimal VEP-annotated-VCF reader + a pluggable expression tag. No\n  external tool; hard-tested from `self_test` on a fixture VCF. Handles missense;\n  frameshift/indel is a documented extension.\n- [`pvacseq/`](pvacseq/) \u2014 pVACseq for window generation + expression join\n  (production-scale alternative, planned).\n", "test": {"status": "pass", "detail": ""}}, {"id": "4-rank", "kind": "native", "description": "Score peptides by MHC binding + immunogenicity (pluggable ranker; default: logistic TME).", "doc": "A single typed-file transform.\n\nSubclass and implement three things: `inputs`, `outputs`, `run`.\nThe base class handles the boring, universal parts \u2014 skip-if-cached and\ncontract validation (inputs must exist before; outputs must exist after).", "layer": 4, "inputs": [{"name": "candidates.tsv", "external": false}, {"name": "hla.json", "external": false}], "outputs": ["ranked.tsv"], "strategies": [{"attr": "ranker", "seam": "Ranker", "seam_doc": "Marker base for a pluggable implementation injected into a Stage \u2014 the\n'seam' (e.g. which variant caller, which ranker, which HLA typer).\n\nMarking a seam ABC as a Strategy costs nothing at runtime but makes the seam\na first-class, introspectable concept: `to_graph()` can auto-report which\nimplementation a stage is *currently* using and what the alternatives are,\nwith zero per-stage wiring. Optional `name`/`description` and the common\n`required_inputs(case)` convention (the DAG edges this impl adds) are declared\nhere so every seam shares them.", "active": "LogisticTmeRanker", "options": [{"cls": "LogisticTmeRanker", "active": true, "doc": "Marker base for a pluggable implementation injected into a Stage \u2014 the\n'seam' (e.g. which variant caller, which ranker, which HLA typer).\n\nMarking a seam ABC as a Strategy costs nothing at runtime but makes the seam\na first-class, introspectable concept: `to_graph()` can auto-report which\nimplementation a stage is *currently* using and what the alternatives are,\nwith zero per-stage wiring. Optional `name`/`description` and the common\n`required_inputs(case)` convention (the DAG edges this impl adds) are declared\nhere so every seam shares them."}]}], "readme": "# Stage 4 \u2014 Rank\n\n**Job:** score every candidate peptide for *this patient's* alleles \u2014 how well it\nbinds MHC, and how likely that presentation triggers a T-cell response \u2014 and sort\nbest-first. This is the differentiated core of the pipeline.\n\n## Two sub-steps hiding in one stage\n\n1. **Binding** \u2014 will the peptide be *displayed*? MHC binding is predicted by tools\n   like **netMHCpan / MHCflurry**. This is where the allele-specific **anchor\n   residue** preferences (position 2 + C-terminus) actually get applied \u2014 as a\n   learned score, not a hand rule (see stage 3's README).\n2. **Immunogenicity** \u2014 given it's displayed, will a T cell actually *react*? This\n   is the harder, less-solved half, and the part our own model addresses.\n\nThe current ranker consumes binding ranks as input *features* and predicts\nimmunogenicity on top. So `binding_affinity` comes from the upstream tool;\n`immunogenicity` is the model's output.\n\n## Why this stage is pluggable (and others aren't)\n\nImmunogenicity prediction is an open problem \u2014 no tool generalizes well (see the\nfiller's benchmarks). This is the one stage where we genuinely expect to swap\nimplementations, so scoring lives behind a `Ranker` interface (`base.py`) and each\napproach is a subdir. Every other stage has one obvious tool; this one is a\nbake-off. The Stage (`rank_stage.py`) only owns I/O and delegates.\n\n## I/O contract\n\n| | |\n|---|---|\n| **Inputs** | `candidates.tsv` (from stage 3), `hla.json` (from stage 2b \u2014 a skip-edge) |\n| **Outputs** | `ranked.tsv` \u2014 candidates widened with `binding_affinity`, `immunogenicity`, sorted |\n| **Dry checks** | input TSV has `peptide` + valid HLA JSON; output has the score columns |\n\n## Approaches\n\n- [`logistic_tme/`](logistic_tme/) \u2014 **default (filler)**. Model B: peptide + TME\n  proxy logistic regression. Modest AUC; holds the slot.\n- *(backlog)* a stronger predictor \u2014 see the top-level `CLAUDE.md` TODO. Requires a\n  literature search on the best predictors of peptide immunoresponsiveness first.\n", "test": {"status": "pass", "detail": ""}}, {"id": "6-eval", "kind": "native", "description": "Filter peptides: autoimmunity, clonality, manufacturability. Gates the construct.", "doc": "A single typed-file transform.\n\nSubclass and implement three things: `inputs`, `outputs`, `run`.\nThe base class handles the boring, universal parts \u2014 skip-if-cached and\ncontract validation (inputs must exist before; outputs must exist after).", "layer": 5, "inputs": [{"name": "ranked.tsv", "external": false}, {"name": "prot.fa", "external": true}], "outputs": ["filtered.tsv"], "strategies": [], "readme": "# Stage 6 \u2014 Eval Filters\n\n**Job:** judge each ranked peptide on three safety/practicality axes and attach\nverdicts. It **flags, it does not drop** \u2014 stage 5 builds only from survivors. This\nis the \"6 gates 5\" relationship.\n\n## The three filters (and why each matters)\n\n- **Autoimmunity** \u2014 does the peptide look like a *normal self-protein*? If a\n  vaccine raised T cells against it, they could attack healthy tissue. This is the\n  computational stand-in for the disaster in `../../docs/safety_testing.md` (the\n  titin case). The real method is a proteome-wide near-match (BLAST); our MVP proxy\n  is an **exact substring match** against the human proteome.\n- **Clonality** \u2014 is the mutation in *every* tumor cell (**clonal**) or only *some*\n  (**subclonal**)? Clonal is a better target: hit it and you hit every cancer cell.\n  Measured by the **cancer cell fraction (CCF)**, derived from the mutation's\n  variant allele frequency in the VCF.\n- **Manufacturability** \u2014 can the peptide physically be synthesized/dissolved?\n  Sequence physicochemistry: too hydrophobic \u2192 aggregates; multiple cysteines \u2192\n  disulfide/aggregation.\n\n## Why native, and why not pluggable\n\nThis is *our* code (a NATIVE stage), and the filters are a fixed, well-understood\nrule set \u2014 unlike ranking, there's no bake-off of competing \"approaches\" worth an\ninterface. So there's a single `rule_based/` approach. If a fundamentally different\nmethod appears (e.g. a learned autoimmunity model), it becomes a new subdir.\n\n## I/O contract\n\n| | |\n|---|---|\n| **Inputs** | `ranked.tsv` (from stage 4), `proteome` (external FASTA, self-check) |\n| **Outputs** | `filtered.tsv` \u2014 every input row + `autoimmunity_flag`, `clonality`, `manufacturability` |\n| **Dry checks** | input TSV has `peptide` + valid proteome FASTA; output has the flag columns |\n| **Survivors** | `autoimmunity_flag == False` **and** `manufacturability == \"pass\"` (clonal preferred) |\n\nThe Stage auto-runs a `self_test` on build (native stages get hard fixture\nassertions).\n\n## Approaches\n\n- [`rule_based/`](rule_based/) \u2014 the three filters as plain functions + thresholds.\n", "test": {"status": "pass", "detail": ""}}, {"id": "5-construct", "kind": "native", "description": "Assemble surviving peptides (+linkers, codon-optimized) into a vaccine construct.", "doc": "A single typed-file transform.\n\nSubclass and implement three things: `inputs`, `outputs`, `run`.\nThe base class handles the boring, universal parts \u2014 skip-if-cached and\ncontract validation (inputs must exist before; outputs must exist after).", "layer": 6, "inputs": [{"name": "filtered.tsv", "external": false}], "outputs": ["construct.fasta", "construct.json"], "strategies": [], "readme": "# Stage 5 \u2014 Construct\n\n**Job:** take the shortlist of surviving peptides and assemble them into one\nmanufacturable vaccine construct.\n\n## The \"string of beads\"\n\nA modern neoantigen vaccine strings many epitopes into a single molecule:\n\n```\nEPITOPE_1 \u2014 linker \u2014 EPITOPE_2 \u2014 linker \u2014 ... \u2014 EPITOPE_n\n```\n\nThen, for an mRNA vaccine, that amino-acid string is **reverse-translated** into a\nnucleotide sequence the cell can express. One construct = one manufacturing run;\nthe cell's proteasome later chops it back into the individual epitopes for display.\n\n## Delivery formats (context)\n\nThe chosen peptides can become a vaccine several ways \u2014 synthetic long peptides,\n**mRNA** (the current frontrunner: Moderna mRNA-4157, BioNTech autogene\ncevumeran), DNA, or dendritic-cell. This stage outputs an mRNA-style string.\n\n## Design requirements (what a real construct must satisfy)\n\n1. **Payload cap** \u2014 you can only fit so many (mRNA-4157 ~34, cevumeran ~20). Pick\n   top N. \u2192 the ranking + eval stages earn their keep here.\n2. **Cleavable linkers** \u2014 spacers must let the proteasome liberate each epitope.\n   We use `AAY` (favors MHC-I cleavage).\n3. **Avoid junctional neoepitopes** \u2014 the seam between two peptides can spell a\n   spurious new epitope. *(Not handled in MVP \u2014 see below.)*\n4. **Manufacturability of the whole molecule** \u2014 codon optimization, GC content,\n   secondary structure, no cryptic splice/poly-A signals.\n5. **Trafficking signals** + **CD4/MHC-II epitopes** for a stronger, sustained\n   response. *(Not handled in MVP.)*\n\n## MVP scope \u2014 honest boundary\n\n**Built (real):** survivor selection (stage-6 gate, best-first by immunogenicity,\nclonal tiebreak, top N) \u2192 `AAY`-linked polypeptide \u2192 codon-optimized nucleotide ORF\n\u2192 `construct.fasta` (AA + NT records) + `construct.json` (full recipe).\n\n**Deliberately omitted** (recorded in the recipe's `omitted_for_mvp`, and in\n`string_of_beads/README.md`): junctional-epitope minimization, MHC-II epitopes,\nsignal/trafficking tags, the mRNA scaffold (cap/UTRs/poly-A/stop), nucleoside\nmodification. Each is its own project; the output is a *real, inspectable* construct,\nnot a manufacturing-ready design.\n\n## I/O contract\n\n| | |\n|---|---|\n| **Inputs** | `filtered.tsv` (from stage 6) |\n| **Outputs** | `construct.fasta` (AA + NT), `construct.json` (recipe) |\n| **Dry checks** | input TSV has `peptide`; outputs valid FASTA + JSON |\n\nAuto-runs a `self_test` on build (survivor selection + assembly + codon length).\n\n## Approaches\n\n- [`string_of_beads/`](string_of_beads/) \u2014 linker concatenation + codon optimization.\n", "test": {"status": "pass", "detail": ""}}], "edges": [{"src": "3-candidates", "dst": "4-rank", "file": "candidates.tsv", "skip": false}, {"src": "2b-hla", "dst": "4-rank", "file": "hla.json", "skip": true}, {"src": "4-rank", "dst": "6-eval", "file": "ranked.tsv", "skip": false}, {"src": "6-eval", "dst": "5-construct", "file": "filtered.tsv", "skip": false}, {"src": "0-acquire", "dst": "1-input", "file": "t", "skip": false}, {"src": "0-acquire", "dst": "1-input", "file": "n", "skip": false}, {"src": "0-acquire", "dst": "1-input", "file": "r", "skip": false}, {"src": "1-input", "dst": "2a-variants", "file": "tumor_dna.bam", "skip": false}, {"src": "1-input", "dst": "2a-variants", "file": "normal_dna.bam", "skip": false}, {"src": "2a-variants", "dst": "3-candidates", "file": "somatic.annotated.vcf", "skip": false}]};
+const NODES = Object.fromEntries(GRAPH.nodes.map(n => [n.id, n]));
 const graphEl = document.getElementById('graph');
 const svg = document.getElementById('edges');
 const SVGNS = 'http://www.w3.org/2000/svg';
 
+/* ---------- build columns ---------- */
 const layers = {};
 GRAPH.nodes.forEach(n => { (layers[n.layer] = layers[n.layer] || []).push(n); });
 Object.keys(layers).map(Number).sort((a,b)=>a-b).forEach(L => {
@@ -75,53 +154,199 @@ Object.keys(layers).map(Number).sort((a,b)=>a-b).forEach(L => {
   graphEl.appendChild(col);
 });
 
+function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
 function card(n){
   const d = document.createElement('div');
-  d.className = 'node' + (n.kind === 'native' ? ' native' : '');
+  d.className = 'node ' + (n.kind === 'native' ? 'native' : 'adapter');
   d.dataset.id = n.id;
-  const kind = n.kind === 'native' ? 'native' : 'adapter';
-  const ins = n.inputs.map(i => `<span class="chip${i.external?' ext':''}">${i.name}</span>`).join('') || '<span class="chip ext">—</span>';
-  const outs = n.outputs.map(o => `<span class="chip out">${o}</span>`).join('') || '<span class="chip">—</span>';
+  const t = n.test || {status:'unknown'};
+  const tcls = t.status==='pass'?'pass':(t.status==='fail'?'fail':'notest');
+  const tsym = t.status==='pass'?'●':(t.status==='fail'?'●':'○');
+  const active = (n.strategies[0]||{}).active;
+  const ins = n.inputs.map(i=>`<span class="chip${i.external?' ext':''}">${esc(i.name)}</span>`).join('') || '<span class="chip ext">—</span>';
+  const outs = n.outputs.map(o=>`<span class="chip out">${esc(o)}</span>`).join('') || '<span class="chip">—</span>';
+  const nopt = (n.strategies[0]||{options:[]}).options.length;
   d.innerHTML =
-    `<div class="nhead"><span class="nname">${n.id}</span><span class="badge${n.kind==='native'?' native':''}">${kind}</span></div>`
-    + (n.description ? `<div class="ndesc">${n.description}</div>` : '')
+    `<div class="nhead"><span class="nname">${esc(n.id)}</span>`
+      + `<span class="tstat ${tcls}" title="self_test: ${esc(t.status)}${t.detail?' — '+esc(t.detail):''}">${tsym}</span></div>`
+    + `<div class="nsub"><span class="kbadge ${n.kind}">${esc(n.kind)}</span>`
+      + (active?`<span class="strat">${esc(active)}</span>`:'') + `</div>`
+    + (n.description?`<div class="ndesc">${esc(n.description)}</div>`:'')
     + `<div class="sect"><div class="lbl">IN</div>${ins}</div>`
-    + `<div class="sect"><div class="lbl">OUT</div>${outs}</div>`;
+    + `<div class="sect"><div class="lbl">OUT</div>${outs}</div>`
+    + (nopt>1?`<div class="nfoot">⚙ ${nopt} interchangeable options</div>`:'');
+  d.addEventListener('click', e => { e.stopPropagation(); select(n.id); });
+  d.addEventListener('mouseenter', () => { if(!selected) highlight(n.id); });
+  d.addEventListener('mouseleave', () => { if(!selected) highlight(null); });
   return d;
 }
 
+/* ---------- edges ---------- */
 function draw(){
   [...svg.querySelectorAll('path,text')].forEach(el => el.remove());
   svg.setAttribute('width', graphEl.scrollWidth);
   svg.setAttribute('height', graphEl.scrollHeight);
   const g = graphEl.getBoundingClientRect();
-  GRAPH.edges.forEach(e => {
+  GRAPH.edges.forEach((e,i) => {
     const s = graphEl.querySelector(`[data-id="${e.src}"]`);
     const t = graphEl.querySelector(`[data-id="${e.dst}"]`);
-    if(!s || !t) return;
-    const sr = s.getBoundingClientRect(), tr = t.getBoundingClientRect();
-    const x1 = sr.right - g.left, y1 = sr.top - g.top + sr.height/2;
-    const x2 = tr.left  - g.left, y2 = tr.top - g.top + tr.height/2;
-    const dx = Math.max(34, (x2 - x1) / 2);
-    const p = document.createElementNS(SVGNS, 'path');
-    p.setAttribute('d', `M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`);
-    p.setAttribute('class', 'edge' + (e.skip ? ' skip' : ''));
-    p.setAttribute('marker-end', e.skip ? 'url(#arrowskip)' : 'url(#arrow)');
-    const title = document.createElementNS(SVGNS, 'title');
-    title.textContent = e.file + (e.skip ? '  (skips a stage)' : '');
-    p.appendChild(title);
+    if(!s||!t) return;
+    const sr=s.getBoundingClientRect(), tr=t.getBoundingClientRect();
+    const x1=sr.right-g.left, y1=sr.top-g.top+sr.height/2;
+    const x2=tr.left-g.left,  y2=tr.top-g.top+tr.height/2;
+    const dx=Math.max(34,(x2-x1)/2);
+    const p=document.createElementNS(SVGNS,'path');
+    p.setAttribute('d',`M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`);
+    p.setAttribute('class','edge'+(e.skip?' skip':''));
+    p.setAttribute('marker-end', e.skip?'url(#arrowskip)':'url(#arrow)');
+    p.dataset.src=e.src; p.dataset.dst=e.dst; p.dataset.skip=e.skip?1:'';
+    const title=document.createElementNS(SVGNS,'title');
+    title.textContent=e.file+(e.skip?'  (skips a stage)':''); p.appendChild(title);
     svg.appendChild(p);
     if(e.skip){
-      const tx = document.createElementNS(SVGNS, 'text');
-      tx.setAttribute('class', 'elabel');
-      tx.setAttribute('x', (x1 + x2) / 2); tx.setAttribute('y', Math.min(y1, y2) - 6);
-      tx.setAttribute('text-anchor', 'middle');
-      tx.textContent = e.file;
-      svg.appendChild(tx);
+      const tx=document.createElementNS(SVGNS,'text');
+      tx.setAttribute('class','elabel'); tx.setAttribute('x',(x1+x2)/2);
+      tx.setAttribute('y',Math.min(y1,y2)-6); tx.setAttribute('text-anchor','middle');
+      tx.textContent=e.file; svg.appendChild(tx);
     }
   });
 }
+
+/* ---------- highlight dependency neighbourhood ---------- */
+function neighbours(id){
+  const up=new Set(), down=new Set();
+  GRAPH.edges.forEach(e=>{ if(e.dst===id) up.add(e.src); if(e.src===id) down.add(e.dst); });
+  return {up,down};
+}
+function highlight(id){
+  const paths=[...svg.querySelectorAll('path.edge')];
+  if(!id){
+    document.querySelectorAll('.node').forEach(n=>n.classList.remove('dim','sel'));
+    paths.forEach(p=>p.classList.remove('hot','fade'));
+    if(selected) document.querySelector(`[data-id="${selected}"]`)?.classList.add('sel');
+    return;
+  }
+  const {up,down}=neighbours(id);
+  const keep=new Set([id,...up,...down]);
+  document.querySelectorAll('.node').forEach(n=>{
+    n.classList.toggle('dim', !keep.has(n.dataset.id));
+    n.classList.toggle('sel', n.dataset.id===id);
+  });
+  paths.forEach(p=>{
+    const hot=(p.dataset.src===id||p.dataset.dst===id);
+    p.classList.toggle('hot',hot);
+    p.classList.toggle('fade',!hot);
+    p.setAttribute('marker-end', hot?'url(#arrowhot)':(p.dataset.skip?'url(#arrowskip)':'url(#arrow)'));
+  });
+}
+
+/* ---------- drawer ---------- */
+let selected=null;
+const scrim=document.getElementById('scrim'), drawer=document.getElementById('drawer');
+function closeDrawer(){ selected=null; drawer.classList.remove('show'); scrim.classList.remove('show');
+  drawer.setAttribute('aria-hidden','true'); highlight(null); }
+document.getElementById('dclose').addEventListener('click',closeDrawer);
+scrim.addEventListener('click',closeDrawer);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
+
+function select(id){
+  selected=id; highlight(id);
+  const n=NODES[id]; const {up,down}=neighbours(id);
+  document.getElementById('dtitle').innerHTML =
+    `${esc(id)} <span class="kbadge ${n.kind}" style="vertical-align:middle">${esc(n.kind)}</span>`;
+  const t=n.test||{status:'unknown'};
+  const runs = n.kind==='native'
+     ? 'runs here — our own logic'
+     : 'adapter — tool execution deferred to Colab';
+  let h='';
+  h += `<div class="dsec">`
+     + `<span class="pill ${t.status==='pass'?'pass':(t.status==='fail'?'fail':'')}">self_test: ${esc(t.status)}</span>`
+     + `<span class="pill">${esc(runs)}</span>`
+     + `<span class="pill">layer ${n.layer}</span></div>`;
+  if(n.description) h+=`<div class="dsec"><div class="md"><p>${esc(n.description)}</p></div></div>`;
+
+  /* strategy seam */
+  n.strategies.forEach(s=>{
+    h+=`<div class="dsec"><h3>seam · ${esc(s.seam)} &nbsp;<span style="color:var(--mut2)">(.${esc(s.attr)})</span></h3>`;
+    if(s.seam_doc) h+=`<div class="md" style="margin-bottom:10px"><p>${esc(s.seam_doc.split('\n\n')[0])}</p></div>`;
+    s.options.forEach(o=>{
+      h+=`<div class="opt${o.active?' active':''}"><div class="ohead">`
+       + `<span class="oname">${esc(o.cls)}</span>`
+       + `<span class="otag ${o.active?'':'alt'}">${o.active?'active':'available'}</span></div>`
+       + (o.doc?`<div class="odoc">${esc(o.doc.split('\n\n')[0])}</div>`:'')
+       + `</div>`;
+    });
+    h+=`</div>`;
+  });
+
+  /* IO */
+  h+=`<div class="dsec"><h3>inputs</h3>`+ (n.inputs.length
+      ? n.inputs.map(i=>`<span class="chip${i.external?' ext':''}" style="display:inline-block;margin:0 6px 6px 0">${esc(i.name)}${i.external?' · external':''}</span>`).join('')
+      : `<span class="empty">none (root stage)</span>`) + `</div>`;
+  h+=`<div class="dsec"><h3>outputs</h3>`+ n.outputs.map(o=>`<span class="chip out" style="display:inline-block;margin:0 6px 6px 0">${esc(o)}</span>`).join('') + `</div>`;
+
+  /* neighbours */
+  const navs = arr => arr.length ? arr.map(x=>`<span class="nav" data-go="${esc(x)}">${esc(x)}</span>`).join('') : '<span class="empty">none</span>';
+  h+=`<div class="dsec"><h3>upstream</h3><div class="flow">${navs([...up])}</div></div>`;
+  h+=`<div class="dsec"><h3>downstream</h3><div class="flow">${navs([...down])}</div></div>`;
+
+  /* docs: class docstring + README */
+  if(n.doc) h+=`<div class="dsec"><h3>module docstring</h3><div class="md">${md(n.doc)}</div></div>`;
+  if(n.readme) h+=`<div class="dsec"><h3>README</h3><div class="md">${md(n.readme)}</div></div>`;
+
+  const body=document.getElementById('dbody'); body.innerHTML=h; body.scrollTop=0;
+  body.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>select(el.dataset.go)));
+  drawer.classList.add('show'); scrim.classList.add('show'); drawer.setAttribute('aria-hidden','false');
+}
+
+/* ---------- tiny markdown (headings, bold/italic/code, lists, tables, quotes, links, hr, fences) ---------- */
+function md(src){
+  const lines=src.replace(/\r/g,'').split('\n');
+  let out='', i=0;
+  const inline=s=>esc(s)
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*]+)\*/g,'$1<em>$2</em>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  while(i<lines.length){
+    let l=lines[i];
+    if(/^```/.test(l)){ let buf=[]; i++; while(i<lines.length&&!/^```/.test(lines[i])){buf.push(lines[i]);i++;} i++;
+      out+='<pre><code>'+esc(buf.join('\n'))+'</code></pre>'; continue; }
+    if(/^\s*$/.test(l)){ i++; continue; }
+    let m=l.match(/^(#{1,6})\s+(.*)$/);
+    if(m){ const lv=m[1].length; out+=`<h${lv}>${inline(m[2])}</h${lv}>`; i++; continue; }
+    if(/^\s*([-*_])\1?\1?\s*$/.test(l) && l.trim().length>=3){ out+='<hr>'; i++; continue; }
+    if(/^\s*>/.test(l)){ let buf=[]; while(i<lines.length&&/^\s*>/.test(lines[i])){buf.push(lines[i].replace(/^\s*>\s?/,''));i++;}
+      out+='<blockquote>'+inline(buf.join(' '))+'</blockquote>'; continue; }
+    if(/^\s*[-*]\s+/.test(l)){ out+='<ul>'; while(i<lines.length&&/^\s*[-*]\s+/.test(lines[i])){
+        out+='<li>'+inline(lines[i].replace(/^\s*[-*]\s+/,''))+'</li>'; i++; } out+='</ul>'; continue; }
+    if(l.includes('|') && i+1<lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i+1])){
+      const row=s=>s.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(c=>c.trim());
+      const head=row(l); i+=2; let body='';
+      while(i<lines.length && lines[i].includes('|') && lines[i].trim()!==''){
+        body+='<tr>'+row(lines[i]).map(c=>`<td>${inline(c)}</td>`).join('')+'</tr>'; i++; }
+      out+='<table><thead><tr>'+head.map(c=>`<th>${inline(c)}</th>`).join('')+'</tr></thead><tbody>'+body+'</tbody></table>';
+      continue; }
+    let buf=[l]; i++;
+    while(i<lines.length && !/^\s*$/.test(lines[i]) && !/^(#{1,6}\s|```|\s*[-*]\s|\s*>)/.test(lines[i])
+          && !(lines[i].includes('|')&&i+1<lines.length&&/^\s*\|?[\s:|-]+\|/.test(lines[i+1]))){ buf.push(lines[i]); i++; }
+    out+='<p>'+inline(buf.join(' '))+'</p>';
+  }
+  return out;
+}
+
+/* ---------- filter ---------- */
+document.querySelectorAll('.btn[data-filter]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.btn[data-filter]').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); const f=b.dataset.filter;
+  document.querySelectorAll('.node').forEach(n=>{
+    n.style.display = (f==='all'||NODES[n.dataset.id].kind===f)?'':'none';
+  });
+  requestAnimationFrame(draw);
+}));
+
 draw();
-window.addEventListener('resize', draw);
+window.addEventListener('resize',draw);
 </script>
 </body></html>

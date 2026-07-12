@@ -21,6 +21,7 @@ from .base import AcquireSource
 
 class AcquireStage(Stage):
     name = "0-acquire"
+    kind = "adapter"
     description = "Stage the three raw sample files (on-disk, or region-sliced from a remote source)."
 
     def __init__(self, case, source: AcquireSource | None = None):

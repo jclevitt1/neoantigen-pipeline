@@ -12,10 +12,12 @@ touches the Stage, the pipeline, or core.
 """
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+
+from core import Strategy
 
 
-class Ranker(ABC):
+class Ranker(Strategy):
     name: str = "unnamed-ranker"
     description: str = ""
 

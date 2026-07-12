@@ -7,10 +7,12 @@ to make the Case's three raw sample files exist. The Stage owns the contract.
 """
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+
+from core import Strategy
 
 
-class AcquireSource(ABC):
+class AcquireSource(Strategy):
     name: str = "unnamed-source"
     description: str = ""
 

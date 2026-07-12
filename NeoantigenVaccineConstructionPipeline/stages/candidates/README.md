@@ -48,4 +48,9 @@ stage.
 
 ## Approaches
 
-- [`pvacseq/`](pvacseq/) — pVACseq for window generation + expression join (planned).
+- [`native/`](native/) — **our own** window generator (default). Pure sliding-window
+  logic + a minimal VEP-annotated-VCF reader + a pluggable expression tag. No
+  external tool; hard-tested from `self_test` on a fixture VCF. Handles missense;
+  frameshift/indel is a documented extension.
+- [`pvacseq/`](pvacseq/) — pVACseq for window generation + expression join
+  (production-scale alternative, planned).

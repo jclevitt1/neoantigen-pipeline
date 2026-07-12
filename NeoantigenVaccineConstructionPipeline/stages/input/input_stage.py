@@ -15,6 +15,7 @@ _RAW_EXTS = [".bam", ".cram", ".fastq", ".fq", ".fastq.gz", ".fq.gz", ".sra"]
 
 class InputStage(Stage):
     name = "1-input"
+    kind = "adapter"
     description = "Normalize raw sequencing (FASTQ/BAM/CRAM) into three aligned BAMs."
 
     def __init__(self, case):

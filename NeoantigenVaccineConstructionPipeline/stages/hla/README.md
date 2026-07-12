@@ -28,10 +28,17 @@ comes from normal.)
 
 | | |
 |---|---|
-| **Inputs** | `normal_dna.bam` |
-| **Outputs** | `hla.json` — tiny; the ~6 alleles, e.g. `{"alleles": ["HLA-A*02:01", ...]}` |
-| **Dry checks** | input BGZF; output valid JSON (TODO: standard HLA nomenclature) |
+| **Inputs** | `normal_dna.bam` *(only when a read-based typer is used; the default `known` typer needs none)* |
+| **Outputs** | `hla.json` — tiny; `{"sample_id":…, "alleles": ["HLA-A*02:01", …], "source":…}` |
+| **Dry checks** | input BGZF (read-based typer); output valid JSON + every allele in class-I nomenclature (`HLA-[ABC]*NN:NN`) |
+
+The typer is a **pluggable seam** (`base.py`, like stage 4's `Ranker`): it declares
+its own required inputs, so with the default `known` typer stage 2b has zero inputs
+and runs today; swap in `optitype` and the normal BAM becomes a real DAG input.
 
 ## Approaches
 
-- [`optitype/`](optitype/) — OptiType HLA-I typing from sequencing reads (planned).
+- [`known/`](known/) — **default**: published HLA genotype by `sample_id` (HCC1395,
+  COLO829), sourced from Cellosaurus/TCLP. No reads, no tool — runs today.
+- [`optitype/`](optitype/) — OptiType HLA-I typing from sequencing reads. Output
+  **parser is real and tested now**; the tool run defers to Colab.
