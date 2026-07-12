@@ -34,6 +34,11 @@ needs a **splice-aware** aligner (STAR/HISAT2), while DNA uses a straight aligne
 | **Outputs** | `tumor_dna.bam`, `normal_dna.bam`, `tumor_rna.bam` |
 | **Dry checks** | inputs non-empty + known raw extension; outputs BGZF magic |
 
+The routing (which tool per file kind + modality) and a `samtools view -H` header
+parser are our own logic — real and self-tested in `align_bwa_star/plan.py`. Only
+the tool run defers to Colab.
+
 ## Approaches
 
-- [`align_bwa_star/`](align_bwa_star/) — bwa for DNA, STAR for RNA (planned).
+- [`align_bwa_star/`](align_bwa_star/) — bwa (DNA) + STAR (RNA) + samtools
+  sort/index. Planner + header parser **done & tested**; tool execution deferred.

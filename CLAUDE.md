@@ -104,10 +104,17 @@ The peptide TSV is one table traveling 3→4→6, gaining columns. `6 gates 5`
     it **through stage 3's own parser**, proving the 2a→3 CSQ hand-off is
     byte-compatible. Verified: 2a-fixture → 3 yields the same 35 candidates.
     **Done (MVP).**
-  - [ ] Remaining front-half *starters*: 1-input (passthrough sort/index), + the
-    `fit_logistic_tme.py` pickle so stage 4 scores live. Front half only needs
-    real-shaped files. RNA/expression deferred: tumor RNA is FASTQ → needs a STAR
-    align first (see Data), then swap in `FeatureCountsExpression`.
+  - [x] **1-input** — NATIVE routing (`stages/input/align_bwa_star/plan.py`):
+    `normalization_plan(src, dst, modality)` is the branch table (aligned BAM →
+    sort+index; CRAM → decode; FASTQ-DNA → bwa; FASTQ-RNA → STAR; all → sort+index),
+    emitting concrete command `Step`s. `parse_sam_header`/`needs_sort` (skip a
+    pointless re-sort) + `contig_style` (chr21-vs-21 guard) parse `samtools view
+    -H`. Hard `self_test` passes; `run()` assembles the plan and defers tool
+    execution to Colab. **Done (MVP; DNA sort+index path; RNA STAR lands w/ expression).**
+  - [ ] Remaining front-half *starter*: the `fit_logistic_tme.py` pickle so stage
+    4 scores live (reads the 715 MB immunogenerative data once → small pickle).
+    RNA/expression deferred: tumor RNA is FASTQ → needs a STAR align first (see
+    Data), then swap in `FeatureCountsExpression`.
 - [ ] MVP target: one Case end-to-end → ranked+filtered peptides + construct FASTA (back half real, front stubbed/subset)
 
 ## Cloud (Google Colab)
