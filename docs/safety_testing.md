@@ -2,7 +2,7 @@
 
 Working reference on how neoantigen-directed therapies are (and aren't) tested for
 safety before humans, why a famous case slipped through, and what the human track
-record actually looks like. Context for the pipeline's **stage 6 autoimmunity
+record actually looks like. Context for the pipeline's **stage 5 autoimmunity
 filter** — the in-silico first pass whose ground truth is the wet lab.
 
 ---
@@ -66,7 +66,7 @@ not just what it *is*.
   (hepatocytes, keratinocytes, endothelium, epithelium, renal, **cardiomyocytes**,
   neurons…); increasingly **iPSC-derived** cell types; motif-based proteome search
   + spot-testing of candidate cross-reactive peptides (the wet-lab twin of our
-  stage-6 filter — this is how titin was found, *after* the deaths).
+  stage-5 filter — this is how titin was found, *after* the deaths).
 
 **What is NOT well covered (the accuracy frontier)**
 

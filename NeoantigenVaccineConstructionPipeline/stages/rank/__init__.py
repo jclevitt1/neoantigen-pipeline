@@ -9,9 +9,22 @@ Add a new ranker: subclass `Ranker`, implement `score()`, pass it to
 """
 from .base import Ranker
 from .logistic_tme.ranker import LogisticTmeRanker
+from .mhcflurry.ranker import LukszaCompositeRanker, MhcflurryPresentationRanker
+from .bigmhc.ranker import BigMHcImRanker
 
-# The default until something stronger lands. LogisticTmeRanker is a documented
-# filler (modest AUC), not a final choice — see logistic_tme/README.md.
-DEFAULT_RANKER = LogisticTmeRanker
+# The default. LukszaCompositeRanker gates on MHCflurry presentation + expression,
+# then ranks by the Luksza quality composite (agretopicity × dissimilarity-to-self)
+# — see docs/ranking_methodology.md. Alternatives behind the same seam:
+#   - MhcflurryPresentationRanker  Axis-1-only presentation ordering (simplest)
+#   - LogisticTmeRanker            the original homegrown baseline (filler)
+#   - BigMHcImRanker               optional non-commercial ML backend (BigMHC_IM)
+DEFAULT_RANKER = LukszaCompositeRanker
 
-__all__ = ["Ranker", "LogisticTmeRanker", "DEFAULT_RANKER"]
+__all__ = [
+    "Ranker",
+    "LukszaCompositeRanker",
+    "MhcflurryPresentationRanker",
+    "LogisticTmeRanker",
+    "BigMHcImRanker",
+    "DEFAULT_RANKER",
+]

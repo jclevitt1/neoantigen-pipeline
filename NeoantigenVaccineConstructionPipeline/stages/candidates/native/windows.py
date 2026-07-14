@@ -36,16 +36,15 @@ def apply_substitution(wildtype: str, position1: int, ref_aa: str, alt_aa: str) 
     return wildtype[:idx] + alt_aa + wildtype[idx + 1:]
 
 
-def windows_covering(seq: str, index0: int, lengths=DEFAULT_LENGTHS) -> list[str]:
-    """Every k-mer of the given lengths that contains position `index0` (0-based).
+def windows_covering_spans(seq: str, index0: int, lengths=DEFAULT_LENGTHS):
+    """Like `windows_covering`, but yields `(start, k, peptide)` spans so a caller
+    can slice the SAME coordinates out of a parallel sequence (e.g. the wild-type
+    protein, to build the WT counterpart of each mutant window for agretopicity).
 
-    A window [start, start+k) covers index0 iff  start <= index0 < start+k.
-    Returns unique peptides, ordered by (length, start) — deterministic. Windows
-    that would run off either end of `seq` are simply skipped.
+    Dedup is on the peptide string, matching `windows_covering`.
     """
     if not (0 <= index0 < len(seq)):
         raise ValueError(f"index {index0} out of range for length {len(seq)}")
-    out: list[str] = []
     seen: set[str] = set()
     n = len(seq)
     for k in lengths:
@@ -57,8 +56,17 @@ def windows_covering(seq: str, index0: int, lengths=DEFAULT_LENGTHS) -> list[str
             pep = seq[start:start + k]
             if pep not in seen:
                 seen.add(pep)
-                out.append(pep)
-    return out
+                yield start, k, pep
+
+
+def windows_covering(seq: str, index0: int, lengths=DEFAULT_LENGTHS) -> list[str]:
+    """Every k-mer of the given lengths that contains position `index0` (0-based).
+
+    A window [start, start+k) covers index0 iff  start <= index0 < start+k.
+    Returns unique peptides, ordered by (length, start) — deterministic. Windows
+    that would run off either end of `seq` are simply skipped.
+    """
+    return [pep for _, _, pep in windows_covering_spans(seq, index0, lengths)]
 
 
 def peptides_from_variant(variant: dict, lengths=DEFAULT_LENGTHS) -> list[dict]:
@@ -68,23 +76,29 @@ def peptides_from_variant(variant: dict, lengths=DEFAULT_LENGTHS) -> list[dict]:
         gene, transcript, wildtype (protein), protein_position (1-based),
         ref_aa, alt_aa, and optional passthrough fields (e.g. vaf).
     Returns one dict per candidate peptide, carrying the peptide plus the
-    provenance a human (or stage 6) needs to trace it back to its mutation.
+    provenance a human (or stage 5) needs to trace it back to its mutation.
     """
+    wildtype = variant["wildtype"]
     mutant = apply_substitution(
-        variant["wildtype"], int(variant["protein_position"]),
+        wildtype, int(variant["protein_position"]),
         variant.get("ref_aa", ""), variant["alt_aa"],
     )
     mut_index0 = int(variant["protein_position"]) - 1
     change = f"{variant.get('ref_aa','')}{variant['protein_position']}{variant['alt_aa']}"
 
     rows: list[dict] = []
-    for pep in windows_covering(mutant, mut_index0, lengths):
+    for start, k, pep in windows_covering_spans(mutant, mut_index0, lengths):
+        # A single substitution leaves the protein length unchanged, so the SAME
+        # [start, start+k) window on the wild-type protein is the tolerized
+        # counterpart peptide — differing only at the mutated residue. Stage 4
+        # scores both to get agretopicity (DAI = binding_WT / binding_MT).
         rows.append({
             "peptide": pep,
+            "wt_peptide": wildtype[start:start + k],
             "gene": variant.get("gene", ""),
             "transcript": variant.get("transcript", ""),
             "protein_change": change,
-            "length": len(pep),
+            "length": k,
             # passthrough for downstream stages (eval reads vaf as a ccf proxy)
             "vaf": variant.get("vaf", ""),
         })

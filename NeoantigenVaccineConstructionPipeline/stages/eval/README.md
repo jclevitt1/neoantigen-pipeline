@@ -1,8 +1,8 @@
-# Stage 6 — Eval Filters
+# Stage 5 — Eval Filters
 
 **Job:** judge each ranked peptide on three safety/practicality axes and attach
-verdicts. It **flags, it does not drop** — stage 5 builds only from survivors. This
-is the "6 gates 5" relationship.
+verdicts. It **flags, it does not drop** — stage 6 builds only from survivors. This
+is the "5 gates 6" relationship.
 
 ## The three filters (and why each matters)
 

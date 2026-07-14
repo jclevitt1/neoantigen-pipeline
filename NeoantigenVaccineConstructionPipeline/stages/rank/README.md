@@ -13,9 +13,13 @@ best-first. This is the differentiated core of the pipeline.
 2. **Immunogenicity** — given it's displayed, will a T cell actually *react*? This
    is the harder, less-solved half, and the part our own model addresses.
 
-The current ranker consumes binding ranks as input *features* and predicts
-immunogenicity on top. So `binding_affinity` comes from the upstream tool;
-`immunogenicity` is the model's output.
+The **default ranker gates before it ranks**: condition on presentation first
+(MHCflurry presentation score + expression), *then* score the survivors on
+recognition. This ordering is TESLA's central finding — foreignness/agretopicity
+carry no signal on peptides that are never displayed. `binding_affinity` is the
+MHCflurry affinity (nM); `immunogenicity` is the recognition composite (the
+best-first sort key). Full rationale + the model comparison that drove these
+choices: [`docs/ranking_methodology.md`](../../../docs/ranking_methodology.md).
 
 ## Why this stage is pluggable (and others aren't)
 
@@ -29,13 +33,25 @@ bake-off. The Stage (`rank_stage.py`) only owns I/O and delegates.
 
 | | |
 |---|---|
-| **Inputs** | `candidates.tsv` (from stage 3), `hla.json` (from stage 2b — a skip-edge) |
-| **Outputs** | `ranked.tsv` — candidates widened with `binding_affinity`, `immunogenicity`, sorted |
+| **Inputs** | `candidates.tsv` (from stage 3), `hla.json` (from stage 2b — a skip-edge); the composite ranker also depends on `proteome` (dissimilarity-to-self) |
+| **Outputs** | `ranked.tsv` — candidates widened with `binding_affinity`, `immunogenicity` (contract), plus feature extras (`presentation_score`, `agretopicity`, `dissimilarity_to_self`, `best_allele`, `tier`), sorted |
 | **Dry checks** | input TSV has `peptide` + valid HLA JSON; output has the score columns |
+
+A ranker that needs extra files declares them via `required_inputs(case)` and loads
+them in `configure(case)` — the Stage wires both. That's how the composite ranker
+picks up the proteome without changing the `score(rows, alleles)` signature.
 
 ## Approaches
 
-- [`logistic_tme/`](logistic_tme/) — **default (filler)**. Model B: peptide + TME
-  proxy logistic regression. Modest AUC; holds the slot.
-- *(backlog)* a stronger predictor — see the top-level `CLAUDE.md` TODO. Requires a
-  literature search on the best predictors of peptide immunoresponsiveness first.
+- [`mhcflurry/`](mhcflurry/) — **default**. `LukszaCompositeRanker`: gate on
+  MHCflurry presentation + expression, then rank survivors by the Luksza quality
+  composite (agretopicity × dissimilarity-to-self). Also ships
+  `MhcflurryPresentationRanker` (Axis-1-only, the simplest drop-in).
+- [`bigmhc/`](bigmhc/) — **optional**. `BigMHcImRanker`: BigMHC_IM ML immunogenicity
+  backend. Non-commercial licence, ~5 GB clone — not the default; wire it in
+  explicitly if you accept those terms.
+- [`logistic_tme/`](logistic_tme/) — the original homegrown baseline (filler,
+  modest AUC). Kept as a zero-dependency reference.
+
+Rationale + the full SOTA model comparison behind these picks:
+[`docs/ranking_methodology.md`](../../../docs/ranking_methodology.md).

@@ -17,7 +17,7 @@ from .native import vcf, windows
 from .native.expression import DEFAULT_EXPRESSION, UNKNOWN_TPM
 
 _REQUIRED_COLS = ["peptide", "tpm"]  # minimal contract; more added by later stages
-_OUT_COLS = ["peptide", "tpm", "gene", "transcript", "protein_change", "length", "vaf"]
+_OUT_COLS = ["peptide", "wt_peptide", "tpm", "gene", "transcript", "protein_change", "length", "vaf"]
 
 
 class CandidateStage(Stage):
@@ -77,6 +77,10 @@ class CandidateStage(Stage):
             rows = windows.peptides_from_variant(v)
             assert rows and all(r["protein_change"] == "G12D" for r in rows)
             assert all("D" in r["peptide"] for r in rows)
+            # WT counterpart: same window, carries the original G where the mutant
+            # has D, same length, so stage 4 can compute agretopicity (DAI).
+            assert all(len(r["wt_peptide"]) == r["length"] for r in rows)
+            assert all("D" not in r["wt_peptide"] and "G" in r["wt_peptide"] for r in rows)
         except AssertionError as e:  # noqa: BLE001
             return f"3-candidates self_test failed: {e}"
         return None

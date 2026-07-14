@@ -8,16 +8,19 @@ standalone .html with inline CSS/JS — no external deps, opens via file://.
     write_html(pipeline, "pipeline_view.html")
 
 Everything shown is *derived from the abstraction*, not hand-authored:
-  - columns/edges       from the DAG (to_graph: layers + producer->consumer edges)
+  - flow order + edges   from the DAG (stage sequence, wraps to the next row;
+                         producer->consumer edges, dashed when they skip a stage)
   - kind + description   from the Stage class
   - active strategy +    from the core.Strategy seam (auto: which impl is plugged in
     its alternatives       + every other concrete impl, with their docstrings)
   - live self_test dot   from Stage.test_status() (run at render time)
   - docs drawer          from the Stage class docstring + the stage's README.md
 
-Click a stage for the detail drawer; hover to trace its dependencies. Because it
-all comes from the graph, adding a stage or swapping a strategy updates the view
-with no edits here.
+Click a stage for the detail drawer; hover to trace its dependencies; click an
+I/O file chip for a per-file explainer (what it is / how it's made / who produces
++ consumes it — the last two derived from the graph, the prose from an optional
+domain `file_docs` map). Because it all comes from the graph, adding a stage or
+swapping a strategy updates the view with no edits here.
 """
 from __future__ import annotations
 
@@ -103,13 +106,13 @@ a{color:#58a6ff}
 .dot{width:9px;height:9px;border-radius:2px;display:inline-block}
 .line{width:16px;height:0;border-top:2px solid #4b5563;display:inline-block}
 .line.skip{border-top:2px dashed var(--skip)}
-.scroll{overflow-x:auto;padding:30px 22px 60px}
-.graph{position:relative;display:flex;gap:74px;min-width:min-content;align-items:flex-start}
-svg.edges{position:absolute;inset:0;pointer-events:none;overflow:visible}
-.col{display:flex;flex-direction:column;gap:26px;position:relative;z-index:1}
+.scroll{padding:30px 26px 90px}
+.graph{position:relative;display:grid;grid-template-columns:repeat(auto-fill,220px);
+       gap:52px 66px;align-items:start;justify-content:start}
+svg.edges{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:0}
 .node{background:var(--panel);border:1px solid var(--line2);border-left:3px solid var(--adapter);
       border-radius:8px;width:220px;box-shadow:0 1px 2px rgba(0,0,0,.5);cursor:pointer;
-      transition:border-color .12s,box-shadow .12s,opacity .12s;position:relative}
+      transition:border-color .12s,box-shadow .12s,opacity .12s;position:relative;z-index:1}
 .node.native{border-left-color:var(--native)}
 .node:hover{border-color:#484f58}
 .node.sel{border-color:#58a6ff;box-shadow:0 0 0 1px #58a6ff,0 2px 10px rgba(0,0,0,.6)}
@@ -132,6 +135,8 @@ svg.edges{position:absolute;inset:0;pointer-events:none;overflow:visible}
       border:1px solid var(--line);border-radius:5px;color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip.ext{border-style:dashed;color:var(--mut)}
 .chip.out{color:#a5d6ff}
+.chip.has-doc{cursor:pointer;border-left:2px solid #2f4a63}
+.chip.has-doc:hover{border-color:#58a6ff;color:#fff}
 .nfoot{padding:6px 11px;font-size:10px;color:var(--mut2);border-top:1px solid var(--line)}
 path.edge{fill:none;stroke:#4b5563;stroke-width:1.6}
 path.edge.skip{stroke:var(--skip);stroke-dasharray:5 4;stroke-width:1.8}
@@ -181,6 +186,24 @@ text.elabel{fill:var(--skip);font-size:9.5px;font-family:ui-monospace,Menlo,mono
 .md th{background:#161b22}
 .md hr{border:none;border-top:1px solid var(--line);margin:14px 0}
 .empty{color:var(--mut2);font-size:11px;font-style:italic}
+/* file popover */
+.fpop{position:fixed;z-index:8;width:344px;max-width:92vw;background:var(--panel);
+      border:1px solid var(--line2);border-radius:10px;box-shadow:0 10px 34px rgba(1,4,9,.72);
+      display:none}
+.fpop.show{display:block}
+.fpop .fclose{position:absolute;top:7px;right:10px;background:none;border:none;color:var(--mut);
+      font-size:18px;cursor:pointer;line-height:1}
+.fpop .fhead{padding:13px 34px 11px 14px;border-bottom:1px solid var(--line)}
+.fpop .ftitle{font-size:13px;font-weight:600;color:var(--fg)}
+.fpop .fname{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#a5d6ff;margin-top:3px;word-break:break-all}
+.fpop .fbadges{display:flex;flex-wrap:wrap;gap:6px;padding:11px 14px 0}
+.fpop .fbadge{font-size:9.5px;padding:2px 7px;border-radius:10px;border:1px solid var(--line2);color:var(--mut)}
+.fpop .fbadge.fmt{color:#d2a8ff;border-color:#3a2d52}
+.fpop .fbody{padding:6px 14px 14px}
+.fpop .frow{margin:11px 0 0}
+.fpop .flbl{font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:var(--mut2);margin-bottom:4px}
+.fpop .ftxt{font-size:12px;color:#c9d1d9;line-height:1.55}
+.fpop .fnav{display:flex;gap:6px;flex-wrap:wrap}
 </style></head>
 <body>
 <div class="header">
@@ -214,22 +237,35 @@ text.elabel{fill:var(--skip);font-size:9.5px;font-family:ui-monospace,Menlo,mono
   <div class="dhead"><h2 id="dtitle"></h2><button class="dclose" id="dclose">&times;</button></div>
   <div class="dbody" id="dbody"></div>
 </aside>
+<div class="fpop" id="fpop"></div>
 
 <script>
 const GRAPH = __GRAPH__;
 const NODES = Object.fromEntries(GRAPH.nodes.map(n => [n.id, n]));
+const FILE_DOCS = GRAPH.file_docs || {};
 const graphEl = document.getElementById('graph');
+
+/* ---------- files: who makes/consumes a file (from the graph) + doc chip ---------- */
+function fileProducer(name){ return GRAPH.nodes.find(n => n.outputs.includes(name)); }
+function fileConsumers(name){ return GRAPH.nodes.filter(n => n.inputs.some(i => i.name === name)); }
+function fileChip(name, cls){
+  const has = !!FILE_DOCS[name];
+  return `<span class="chip ${cls}${has?' has-doc':''}" data-file="${esc(name)}"`
+       + `${has?' title="click: what is this file?"':''}>${esc(name)}</span>`;
+}
+function wireFileChips(root){
+  root.querySelectorAll('.chip.has-doc[data-file]').forEach(ch =>
+    ch.addEventListener('click', e => { e.stopPropagation(); openFilePop(ch.dataset.file, ch); }));
+}
 const svg = document.getElementById('edges');
 const SVGNS = 'http://www.w3.org/2000/svg';
 
-/* ---------- build columns ---------- */
-const layers = {};
-GRAPH.nodes.forEach(n => { (layers[n.layer] = layers[n.layer] || []).push(n); });
-Object.keys(layers).map(Number).sort((a,b)=>a-b).forEach(L => {
-  const col = document.createElement('div'); col.className = 'col';
-  layers[L].forEach(n => col.appendChild(card(n)));
-  graphEl.appendChild(col);
-});
+/* ---------- lay out in stage-number reading order (wraps to next row) ---------- */
+const seqKey = id => { const m = id.match(/^(\d+)([a-z]?)/); return m ? [+m[1], m[2]||''] : [999, id]; };
+[...GRAPH.nodes]
+  .sort((a,b) => { const ka=seqKey(a.id), kb=seqKey(b.id);
+                   return ka[0]-kb[0] || (ka[1]<kb[1]?-1:ka[1]>kb[1]?1:0); })
+  .forEach(n => graphEl.appendChild(card(n)));
 
 function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -241,8 +277,9 @@ function card(n){
   const tcls = t.status==='pass'?'pass':(t.status==='fail'?'fail':'notest');
   const tsym = t.status==='pass'?'●':(t.status==='fail'?'●':'○');
   const active = (n.strategies[0]||{}).active;
-  const ins = n.inputs.map(i=>`<span class="chip${i.external?' ext':''}">${esc(i.name)}</span>`).join('') || '<span class="chip ext">—</span>';
-  const outs = n.outputs.map(o=>`<span class="chip out">${esc(o)}</span>`).join('') || '<span class="chip">—</span>';
+  const ins = n.inputs.map(i=>fileChip(i.name, i.external?'ext':'')).join('')
+    || '<span class="chip ext" title="root stage: no upstream file input">root · no file input</span>';
+  const outs = n.outputs.map(o=>fileChip(o,'out')).join('') || '<span class="chip">—</span>';
   const nopt = (n.strategies[0]||{options:[]}).options.length;
   d.innerHTML =
     `<div class="nhead"><span class="nname">${esc(n.id)}</span>`
@@ -256,6 +293,7 @@ function card(n){
   d.addEventListener('click', e => { e.stopPropagation(); select(n.id); });
   d.addEventListener('mouseenter', () => { if(!selected) highlight(n.id); });
   d.addEventListener('mouseleave', () => { if(!selected) highlight(null); });
+  wireFileChips(d);  // clicking a file chip opens its popover, not the stage drawer
   return d;
 }
 
@@ -268,13 +306,25 @@ function draw(){
   GRAPH.edges.forEach((e,i) => {
     const s = graphEl.querySelector(`[data-id="${e.src}"]`);
     const t = graphEl.querySelector(`[data-id="${e.dst}"]`);
-    if(!s||!t) return;
+    if(!s||!t||s.offsetParent===null||t.offsetParent===null) return;  // skip hidden (filtered) nodes
     const sr=s.getBoundingClientRect(), tr=t.getBoundingClientRect();
-    const x1=sr.right-g.left, y1=sr.top-g.top+sr.height/2;
-    const x2=tr.left-g.left,  y2=tr.top-g.top+tr.height/2;
-    const dx=Math.max(34,(x2-x1)/2);
+    // forward = consumer starts at/after the producer ends -> horizontal curve;
+    // otherwise the consumer wrapped to a later row -> exit the bottom, enter the top.
+    const forward = tr.left >= sr.right - 4;
+    let x1,y1,x2,y2,c1x,c1y,c2x,c2y;
+    if(forward){
+      x1=sr.right-g.left; y1=sr.top-g.top+sr.height/2;
+      x2=tr.left-g.left;  y2=tr.top-g.top+tr.height/2;
+      const dx=Math.max(34,(x2-x1)/2);
+      c1x=x1+dx; c1y=y1; c2x=x2-dx; c2y=y2;
+    } else {
+      x1=sr.left-g.left+sr.width/2; y1=sr.bottom-g.top;
+      x2=tr.left-g.left+tr.width/2; y2=tr.top-g.top;
+      const dy=Math.max(30,(y2-y1)/2);
+      c1x=x1; c1y=y1+dy; c2x=x2; c2y=y2-dy;
+    }
     const p=document.createElementNS(SVGNS,'path');
-    p.setAttribute('d',`M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`);
+    p.setAttribute('d',`M${x1},${y1} C${c1x},${c1y} ${c2x},${c2y} ${x2},${y2}`);
     p.setAttribute('class','edge'+(e.skip?' skip':''));
     p.setAttribute('marker-end', e.skip?'url(#arrowskip)':'url(#arrow)');
     p.dataset.src=e.src; p.dataset.dst=e.dst; p.dataset.skip=e.skip?1:'';
@@ -325,7 +375,7 @@ function closeDrawer(){ selected=null; drawer.classList.remove('show'); scrim.cl
   drawer.setAttribute('aria-hidden','true'); highlight(null); }
 document.getElementById('dclose').addEventListener('click',closeDrawer);
 scrim.addEventListener('click',closeDrawer);
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeFilePop(); closeDrawer(); } });
 
 function select(id){
   selected=id; highlight(id);
@@ -357,11 +407,17 @@ function select(id){
     h+=`</div>`;
   });
 
-  /* IO */
+  /* IO (chips clickable when documented) */
+  const dchip = (name, cls, suffix) => {
+    const has = !!FILE_DOCS[name];
+    return `<span class="chip ${cls}${has?' has-doc':''}" data-file="${esc(name)}" `
+         + `style="display:inline-block;margin:0 6px 6px 0"${has?' title="click for details"':''}>`
+         + `${esc(name)}${suffix||''}</span>`;
+  };
   h+=`<div class="dsec"><h3>inputs</h3>`+ (n.inputs.length
-      ? n.inputs.map(i=>`<span class="chip${i.external?' ext':''}" style="display:inline-block;margin:0 6px 6px 0">${esc(i.name)}${i.external?' · external':''}</span>`).join('')
+      ? n.inputs.map(i=>dchip(i.name, i.external?'ext':'', i.external?' · external':'')).join('')
       : `<span class="empty">none (root stage)</span>`) + `</div>`;
-  h+=`<div class="dsec"><h3>outputs</h3>`+ n.outputs.map(o=>`<span class="chip out" style="display:inline-block;margin:0 6px 6px 0">${esc(o)}</span>`).join('') + `</div>`;
+  h+=`<div class="dsec"><h3>outputs</h3>`+ n.outputs.map(o=>dchip(o,'out','')).join('') + `</div>`;
 
   /* neighbours */
   const navs = arr => arr.length ? arr.map(x=>`<span class="nav" data-go="${esc(x)}">${esc(x)}</span>`).join('') : '<span class="empty">none</span>';
@@ -374,8 +430,45 @@ function select(id){
 
   const body=document.getElementById('dbody'); body.innerHTML=h; body.scrollTop=0;
   body.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>select(el.dataset.go)));
+  wireFileChips(body);
   drawer.classList.add('show'); scrim.classList.add('show'); drawer.setAttribute('aria-hidden','false');
 }
+
+/* ---------- file popover: what a file is / how it's made / who makes+uses it ---------- */
+const fpop=document.getElementById('fpop');
+function closeFilePop(){ fpop.classList.remove('show'); }
+function openFilePop(name, anchor){
+  const doc=FILE_DOCS[name]; if(!doc) return;
+  const prod=fileProducer(name), cons=fileConsumers(name);
+  const link=id=>`<span class="nav" data-go="${esc(id)}">${esc(id)}</span>`;
+  let h=`<button class="fclose" title="close">&times;</button>`
+    + `<div class="fhead"><div class="ftitle">${esc(doc.title||name)}</div>`
+    + `<div class="fname">${esc(name)}</div></div>`
+    + `<div class="fbadges">`
+    + (doc.format?`<span class="fbadge fmt">${esc(doc.format)}</span>`:'')
+    + `<span class="fbadge">${prod?'derived':'external input'}</span></div>`
+    + `<div class="fbody">`;
+  if(doc.what) h+=`<div class="frow"><div class="flbl">what it is</div><div class="ftxt">${esc(doc.what)}</div></div>`;
+  if(doc.how)  h+=`<div class="frow"><div class="flbl">how it's made</div><div class="ftxt">${esc(doc.how)}</div></div>`;
+  h+=`<div class="frow"><div class="flbl">produced by</div><div class="fnav">`
+    + (prod?link(prod.id):`<span class="empty">external — supplied to the pipeline</span>`)+`</div></div>`;
+  h+=`<div class="frow"><div class="flbl">consumed by</div><div class="fnav">`
+    + (cons.length?cons.map(c=>link(c.id)).join(''):`<span class="empty">none (terminal output)</span>`)+`</div></div>`;
+  h+=`</div>`;
+  fpop.innerHTML=h; fpop.classList.add('show');
+  const r=anchor.getBoundingClientRect(), pw=fpop.offsetWidth, ph=fpop.offsetHeight;
+  let left=Math.min(r.left, window.innerWidth-10-pw); left=Math.max(10,left);
+  let top=r.bottom+8; if(top+ph>window.innerHeight-10) top=Math.max(10, r.top-8-ph);
+  fpop.style.left=left+'px'; fpop.style.top=top+'px';
+  fpop.querySelector('.fclose').addEventListener('click',e=>{e.stopPropagation();closeFilePop();});
+  fpop.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',e=>{
+    e.stopPropagation(); closeFilePop(); select(el.dataset.go); }));
+}
+document.addEventListener('click',e=>{
+  if(fpop.classList.contains('show') && !fpop.contains(e.target) && !e.target.closest('.chip.has-doc'))
+    closeFilePop();
+});
+window.addEventListener('resize',closeFilePop);
 
 /* ---------- tiny markdown (headings, bold/italic/code, lists, tables, quotes, links, hr, fences) ---------- */
 function md(src){
@@ -437,14 +530,20 @@ def render_html(graph: dict) -> str:
             .replace("__NAME__", str(graph.get("name", "pipeline"))))
 
 
-def write_html(pipeline, path, run_self_tests: bool = True) -> Path:
+def write_html(pipeline, path, run_self_tests: bool = True, file_docs: dict | None = None) -> Path:
     """Render `pipeline` to a standalone interactive HTML file. Returns the path.
 
     `run_self_tests` executes each stage's self_test() at render time so the view
     shows a live pass/fail dot. Stages self-test on tiny in-memory fixtures, so
-    this is cheap and side-effect-free; set False to skip."""
+    this is cheap and side-effect-free; set False to skip.
+
+    `file_docs` is an optional `{basename: {title, format, what, how, ...}}` map
+    (domain-supplied — viz stays domain-agnostic). When given, matching I/O file
+    chips become clickable and open a per-file explainer popover. Everything else
+    about a file (producer, consumers) is derived from the graph."""
     _eager_import_approaches(pipeline)
     graph = _enrich(pipeline.to_graph(), pipeline, run_self_tests)
+    graph["file_docs"] = file_docs or {}
     path = Path(path)
     path.write_text(render_html(graph))
     return path

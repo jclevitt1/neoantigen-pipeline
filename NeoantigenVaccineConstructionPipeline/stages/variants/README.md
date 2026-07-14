@@ -40,7 +40,7 @@ about — it's the seed of a neoantigen.
 | **Dry checks** | inputs BGZF/non-empty (real source); output is a `##fileformat=VCF` **advertising a CSQ header** |
 
 Also carries per-mutation **allele frequency** (FORMAT/AF) → later becomes the
-**CCF** that stage 6 uses to judge clonal vs subclonal.
+**CCF** that stage 5 uses to judge clonal vs subclonal.
 
 The caller+annotator is a **pluggable seam** (`base.py`, like stage 4's `Ranker`
 and 2b's `HlaTyper`): each source declares its own inputs. The one piece 2a *owns*

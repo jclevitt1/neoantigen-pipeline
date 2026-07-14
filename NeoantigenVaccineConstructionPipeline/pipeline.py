@@ -1,7 +1,7 @@
 """
 NeoantigenVaccineConstructionPipeline — concrete assembly of Stages.
 
-Build order is back-half-first: stages 4 -> 6 -> 5 are real/native and get wired
+Build order is back-half-first: stages 4 -> 5 -> 6 are real/native and get wired
 up first; the tool-heavy front (0,1,2,3) is stubbed, then swapped for real tools
 stage by stage with zero changes to this file or to core.
 
@@ -38,6 +38,16 @@ def build_pipeline(case) -> Pipeline:
     ):
         p.add(stage_cls(case))
     return p
+
+
+def write_view(case, path="pipeline_view.html", run_self_tests: bool = True):
+    """Build the pipeline for `case` and render the interactive HTML view, with the
+    per-file explainer popovers wired in (domain file docs → viz overlay). One call
+    so regenerating the view stays a one-liner. Returns the written Path."""
+    from viz import write_html
+    from .file_docs import build_file_docs
+    p = build_pipeline(case)
+    return write_html(p, path, run_self_tests=run_self_tests, file_docs=build_file_docs(case))
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# Stage 5 — Construct
+# Stage 6 — Construct
 
 **Job:** take the shortlist of surviving peptides and assemble them into one
 manufacturable vaccine construct.
@@ -36,7 +36,7 @@ cevumeran), DNA, or dendritic-cell. This stage outputs an mRNA-style string.
 
 ## MVP scope — honest boundary
 
-**Built (real):** survivor selection (stage-6 gate, best-first by immunogenicity,
+**Built (real):** survivor selection (stage-5 gate, best-first by immunogenicity,
 clonal tiebreak, top N) → `AAY`-linked polypeptide → codon-optimized nucleotide ORF
 → `construct.fasta` (AA + NT records) + `construct.json` (full recipe).
 
@@ -50,7 +50,7 @@ not a manufacturing-ready design.
 
 | | |
 |---|---|
-| **Inputs** | `filtered.tsv` (from stage 6) |
+| **Inputs** | `filtered.tsv` (from stage 5) |
 | **Outputs** | `construct.fasta` (AA + NT), `construct.json` (recipe) |
 | **Dry checks** | input TSV has `peptide`; outputs valid FASTA + JSON |
 

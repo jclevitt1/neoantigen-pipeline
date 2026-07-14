@@ -1,5 +1,5 @@
 """
-Rule-based eval filters — the approach behind stage 6.
+Rule-based eval filters — the approach behind stage 5.
 
 Three plain functions + their constants, kept separate from the Stage so they're
 unit-testable with in-memory fixtures (no files). See README.md in this directory

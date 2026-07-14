@@ -1,5 +1,5 @@
 """
-String-of-beads construct builder — the approach behind stage 5.
+String-of-beads construct builder — the approach behind stage 6.
 
 Pure functions (no file I/O) so they're unit-testable: pick survivors, concatenate
 with cleavable linkers, reverse-translate to a nucleotide ORF. See README.md here
@@ -29,7 +29,7 @@ OMITTED = [
 
 
 def _is_survivor(row: dict) -> bool:
-    """Passed the stage-6 gate: not autoimmune AND manufacturable."""
+    """Passed the stage-5 gate: not autoimmune AND manufacturable."""
     auto = str(row.get("autoimmunity_flag", "")).strip().lower()
     manuf = str(row.get("manufacturability", "")).strip().lower()
     return auto in ("false", "0", "") and manuf == "pass"

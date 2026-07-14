@@ -37,11 +37,16 @@ class RankStage(Stage):
     def __init__(self, case, ranker: Ranker | None = None):
         self.case = case
         self.ranker = ranker or DEFAULT_RANKER()
+        # Let a ranker load anything it needs from the Case once (e.g. the
+        # composite ranker reads the proteome for dissimilarity-to-self).
+        self.ranker.configure(case)
 
     @property
     def inputs(self):
         c = self.case
-        return [c.candidates_tsv, c.hla_json]
+        # A ranker may add DAG edges (files it reads); e.g. the composite ranker
+        # depends on the proteome. Mirrors how CandidateStage wires expression.
+        return [c.candidates_tsv, c.hla_json, *self.ranker.required_inputs(c)]
 
     @property
     def outputs(self):
@@ -55,8 +60,28 @@ class RankStage(Stage):
         checks.require_tsv_columns(self.case.ranked_tsv, _SCORE_COLS)
 
     def self_test(self) -> str | None:
-        # NATIVE stage: real assertions on a fixture go here (Model A/B ranking).
-        # TODO: tiny candidates.tsv + hla.json -> assert score columns + ordering.
+        # Assert the pure Axis-2 recognition math the default ranker rests on.
+        # (The MHCflurry binding calls need the wet package + Colab, so they're
+        # exercised there; the math below is deterministic and runs anywhere.)
+        from .mhcflurry import recognition as rec
+        try:
+            # agretopicity = Kd_WT / Kd_MT: mutant binding 10x stronger (10 vs 100 nM)
+            assert rec.agretopicity(10.0, 100.0) == 10.0
+            assert rec.agretopicity(None, 100.0) is None          # missing → None
+            # dissimilarity-to-self: verbatim self = 0.0, novel = 1.0
+            assert rec.dissimilarity_to_self("SIINFEKL", "AAASIINFEKLAAA") == 0.0
+            assert rec.dissimilarity_to_self("WWWWWWWW", "AAASIINFEKLAAA") == 1.0
+            assert rec.dissimilarity_to_self("ABC", "") is None    # no proteome → None
+            # Luksza composite Q = R·D, D = log A + log C. With C=1, R=1 (dormant):
+            # Q = log(agretopicity). Higher agretopicity → higher quality.
+            q_hi = rec.luksza_quality(10.0, 1.0)
+            q_lo = rec.luksza_quality(2.0, 1.0)
+            assert q_hi > q_lo > 0
+            assert rec.luksza_quality(None) is None
+            # A novel peptide (C=1) must outrank an identical-agretopicity self one (C≈0)
+            assert rec.luksza_quality(5.0, 1.0) > rec.luksza_quality(5.0, 0.0)
+        except AssertionError as e:  # noqa: BLE001
+            return f"4-rank self_test failed: {e}"
         return None
 
     def run(self) -> None:

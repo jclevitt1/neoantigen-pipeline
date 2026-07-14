@@ -22,7 +22,7 @@ The pipeline stops exactly where silicon hands off to the lab.
 - **`Case`** (`NeoantigenVaccineConstructionPipeline/case.py`) — one patient's
   raw inputs + typed derived paths. Swap HCC1395 → COLO829 = one Case.
 - **Two flavors of Stage:** *native* (our own logic — 3-candidates, 4-rank,
-  6-eval, 5-construct, plus the default typer/expression paths) vs *adapters*
+  5-eval, 6-construct, plus the default typer/expression paths) vs *adapters*
   (wrap external tools — 1-input, 2a-variants, and the OptiType/pVACseq paths).
   Several stages are hybrids via a **pluggable seam** (`Ranker`, `AcquireSource`,
   `HlaTyper`, `ExpressionSource`, `VariantSource`): a native default that runs
@@ -51,7 +51,7 @@ The pipeline stops exactly where silicon hands off to the lab.
 
 ## DAG (derived order)
 
-    0-acquire → 1-input → 2a-variants → 2b-hla → 3-candidates → 4-rank → 6-eval → 5-construct
+    0-acquire → 1-input → 2a-variants → 2b-hla → 3-candidates → 4-rank → 5-eval → 6-construct
 
 The peptide TSV is one table traveling 3→4→6, gaining columns. `6 gates 5`
 (filter, then build survivors). Skip-edges: `2b-hla→4-rank` (hla.json),
@@ -70,10 +70,10 @@ The peptide TSV is one table traveling 3→4→6, gaining columns. `6 gates 5`
   - [x] **4-rank** — `RankStage` owns I/O, delegates to a pluggable `Ranker`
     (`stages/rank/logistic_tme/`); default `LogisticTmeRanker` (documented filler).
     Only the fit-pickle step remains before it scores live. **MVP-working.**
-  - [x] **6-eval** — three filters (autoimmunity = exact proteome match;
+  - [x] **5-eval** — three filters (autoimmunity = exact proteome match;
     clonality = CCF≥0.9; manufacturability = GRAVY + cysteine rules). Flags,
     doesn't drop. Native `self_test` passes on build. **Done.**
-  - [x] **5-construct** — string-of-beads: survivor gate → AAY-linked polypeptide
+  - [x] **6-construct** — string-of-beads: survivor gate → AAY-linked polypeptide
     → codon-optimized nucleotide ORF → construct.fasta (AA+NT) + construct.json
     recipe. `self_test` passes; MVP omissions recorded in the recipe. **Done.**
   - **Back half now runs end-to-end from a fixture** (ranked.tsv → eval → construct).
@@ -155,7 +155,7 @@ Each stage is a package `stages/<stage>/` with:
 - `docs/safety_testing.md` — safety-testing notes + resources: the 2013 titin
   cardiotoxicity case (Linette/Cameron), the cell-*state* lesson behind why it
   slipped preclinical screens, what the wet lab does/doesn't cover, and the human
-  neoantigen-vaccine success record. Context for the stage-6 autoimmunity filter.
+  neoantigen-vaccine success record. Context for the stage-5 autoimmunity filter.
 
 ## Data (public, no approval to start)
 HCC1395/HCC1395BL (breast, SEQC2 benchmark) + COLO829/COLO829BL (melanoma) = two

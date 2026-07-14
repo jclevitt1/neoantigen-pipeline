@@ -5,7 +5,7 @@ to a nucleotide ORF. Pure functions in `builder.py`.
 
 ## Pipeline
 
-1. **`select_survivors`** — keep rows that passed the stage-6 gate
+1. **`select_survivors`** — keep rows that passed the stage-5 gate
    (`autoimmunity_flag == False` **and** `manufacturability == "pass"`), sort
    best-first by `immunogenicity` (clonal preferred as tiebreak), cap at
    `DEFAULT_MAX_PEPTIDES` (20).

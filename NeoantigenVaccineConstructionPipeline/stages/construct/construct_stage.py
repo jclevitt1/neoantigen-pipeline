@@ -1,9 +1,9 @@
 """
-Stage 5 — Construct.  (contract + orchestration)
+Stage 6 — Construct.  (contract + orchestration)
 
-Top surviving peptides (post stage-6 gate) -> one vaccine construct: peptides
+Top surviving peptides (post stage-5 gate) -> one vaccine construct: peptides
 concatenated with linkers, then reverse-translated (codon-optimized). Runs AFTER
-stage 6 (consumes filtered.tsv), so in the DAG the arrows are 4 -> 6 -> 5.
+stage 5 (consumes filtered.tsv), so in the DAG the arrows are 4 -> 5 -> 6.
 Writes the construct FASTA (amino-acid + nucleotide records) + a JSON recipe for
 reproducibility. Assembly logic lives in the string_of_beads/ approach.
 See stages/construct/README.md.
@@ -19,7 +19,7 @@ from .string_of_beads import builder
 
 
 class ConstructStage(Stage):
-    name = "5-construct"
+    name = "6-construct"
     kind = "native"
     description = "Assemble surviving peptides (+linkers, codon-optimized) into a vaccine construct."
 
@@ -61,7 +61,7 @@ class ConstructStage(Stage):
             # nucleotide length = 3 * amino-acid length
             assert len(rec["construct_nt"]) == 3 * len(rec["construct_aa"])
         except AssertionError as e:  # noqa: BLE001
-            return f"5-construct self_test failed: {e}"
+            return f"6-construct self_test failed: {e}"
         return None
 
     def run(self) -> None:

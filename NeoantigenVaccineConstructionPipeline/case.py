@@ -22,7 +22,7 @@ class Case:
     tumor_rna: Path
     # --- shared external references (roots) ---
     reference: Path            # genome FASTA (for alignment + variant calling)
-    proteome: Path             # human proteome FASTA (stage 6 self-similarity)
+    proteome: Path             # human proteome FASTA (stage 5 self-similarity)
 
     def __post_init__(self) -> None:
         self.workdir = Path(self.workdir)

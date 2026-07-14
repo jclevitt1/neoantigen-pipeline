@@ -44,7 +44,7 @@ def _tumor_vaf(fields: list[str]) -> str:
     """Best-effort allele fraction from FORMAT/sample columns (Mutect2 AF).
 
     Returns '' if absent — expression, not VAF, is the required tag; VAF is a
-    passthrough that stage 6 uses as a clonality proxy when CCF isn't computed.
+    passthrough that stage 5 uses as a clonality proxy when CCF isn't computed.
     """
     if len(fields) < 10:
         return ""

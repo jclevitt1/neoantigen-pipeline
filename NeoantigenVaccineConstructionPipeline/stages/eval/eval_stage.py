@@ -1,8 +1,8 @@
 """
-Stage 6 — Eval filters.  (NATIVE; contract + orchestration)
+Stage 5 — Eval filters.  (NATIVE; contract + orchestration)
 
-ranked peptides -> pass/fail flags. GATES stage 5: this stage only *flags*; it
-does not drop rows. Construct (stage 5) builds from the survivors. The filter
+ranked peptides -> pass/fail flags. GATES stage 6: this stage only *flags*; it
+does not drop rows. Construct (stage 6) builds from the survivors. The filter
 logic lives in the rule_based/ approach; this Stage orchestrates it over the file.
 See stages/eval/README.md.
 """
@@ -18,7 +18,7 @@ _FLAG_COLS = ["peptide", "autoimmunity_flag", "clonality", "manufacturability"]
 
 
 class EvalStage(Stage):
-    name = "6-eval"
+    name = "5-eval"
     kind = "native"
     description = "Filter peptides: autoimmunity, clonality, manufacturability. Gates the construct."
 
@@ -53,7 +53,7 @@ class EvalStage(Stage):
             assert filters.flag_autoimmunity("SIINFEKL", idx) is True        # self
             assert filters.flag_autoimmunity("WWWWWWWW", idx) is False       # novel
         except AssertionError as e:  # noqa: BLE001
-            return f"6-eval self_test failed: {e}"
+            return f"5-eval self_test failed: {e}"
         return None
 
     def run(self) -> None:
