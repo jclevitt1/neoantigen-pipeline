@@ -39,12 +39,16 @@ from ..base import VariantRecord
 
 _UNIPROT_FASTA = "https://rest.uniprot.org/uniprotkb/{acc}.fasta"
 
-# Common class-I alleles, all MHCflurry-supported. Includes the published
+# A single realistic class-I GENOTYPE (2x A/B/C, <=6 alleles). MHCflurry's
+# presentation predictor treats an allele list as ONE individual's genotype and
+# takes the best allele per peptide -- and CAPS it at 6 -- which matches the
+# pipeline's "one Case = one patient" model. Chosen to cover the published
 # restrictions for the hotspots below: C*08:02 (KRAS G12D), A*11:01 (KRAS G12V),
 # A*02:01 (TP53 R175H).
 DEMO_HLA_PANEL = [
-    "HLA-A*02:01", "HLA-A*01:01", "HLA-A*03:01", "HLA-A*11:01", "HLA-A*24:02",
-    "HLA-B*07:02", "HLA-B*08:01", "HLA-C*07:01", "HLA-C*08:02",
+    "HLA-A*02:01", "HLA-A*11:01",
+    "HLA-B*07:02", "HLA-B*08:01",
+    "HLA-C*07:01", "HLA-C*08:02",
 ]
 
 # Curated real missense hotspots. `uniprot` supplies the WT sequence (fetched +
