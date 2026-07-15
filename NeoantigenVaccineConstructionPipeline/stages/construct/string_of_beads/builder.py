@@ -28,11 +28,28 @@ OMITTED = [
 ]
 
 
+def _passes_presentation(row: dict) -> bool:
+    """If a stage-4 presentation tier is recorded, require it to be 'pass'.
+    Rows without a `tier` column (minimal fixtures) are not gated here — so this
+    stays a no-op for callers that don't carry presentation info."""
+    tier = str(row.get("tier", "")).strip().lower()
+    return tier in ("", "pass")
+
+
 def _is_survivor(row: dict) -> bool:
-    """Passed the stage-5 gate: not autoimmune AND manufacturable."""
+    """Passed the stage-5 gate (not autoimmune AND manufacturable) AND — if a
+    stage-4 presentation tier is present — cleared the presentation gate. The tier
+    guard stops the construct from padding itself toward max_peptides with
+    gated-out `low-presentation` peptides that recognition scoring never applied to
+    (their immunogenicity is NaN/stale). A vaccine peptide that won't be displayed
+    on MHC is not a vaccine peptide."""
     auto = str(row.get("autoimmunity_flag", "")).strip().lower()
     manuf = str(row.get("manufacturability", "")).strip().lower()
-    return auto in ("false", "0", "") and manuf == "pass"
+    return (
+        auto in ("false", "0", "")
+        and manuf == "pass"
+        and _passes_presentation(row)
+    )
 
 
 def _immunogenicity(row: dict) -> float:

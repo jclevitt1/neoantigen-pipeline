@@ -53,9 +53,13 @@ class ConstructStage(Stage):
                  "autoimmunity_flag": "True", "manufacturability": "pass", "clonality": "clonal"},
                 {"peptide": "IIIIIIIII", "immunogenicity": "0.95",    # ...and this fails manuf
                  "autoimmunity_flag": "False", "manufacturability": "fail", "clonality": "clonal"},
+                {"peptide": "GATEDLOWP", "immunogenicity": "0.97",   # clean + top score, but...
+                 "autoimmunity_flag": "False", "manufacturability": "pass", "clonality": "clonal",
+                 "tier": "low-presentation"},                        # ...gated out on presentation
             ]
             rec = builder.build_construct(rows)
-            # only the two safe/manufacturable survivors, best-first
+            # only the two safe/manufacturable/PRESENTED survivors, best-first
+            # (GATEDLOWP outscores both but never got presented -> excluded)
             assert rec["peptides"] == ["SIINFEKL", "YTNVGWLMK"], rec["peptides"]
             assert rec["construct_aa"] == "SIINFEKLAAYYTNVGWLMK", rec["construct_aa"]
             # nucleotide length = 3 * amino-acid length
