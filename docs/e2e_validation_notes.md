@@ -40,18 +40,58 @@ Stage 3 needs `WildtypeProtein` in the CSQ, produced **only** by `vep --plugin W
 the Wildtype plugin in Colab. That is the main risk / time sink. Confirm contig naming
 (`chr21` vs `21`) once with `samtools view -H`.
 
-## OPEN DECISION — B1 vs B2 (deferred by user; pick before starting B)
+## DECISION — full B2 (from real reads), chr21 slice, one notebook (chosen 2026-07-15)
 
-| | **B1 — real VCF, skip calling** | **B2 — from real reads** |
+**Chosen: run the WHOLE front-end from real reads** — acquire → (sort/index) → Mutect2
+call → VEP+Wildtype annotate → stages 3→6. Validates the full pipeline, not a slice of
+stage 2. Rejected B1 (skip-calling) because the point is to prove the front-end, and
+`Mutect2` is cheap here (pre-aligned BAMs, matched normal). One notebook, two clearly
+marked halves; the "subset" is the built-in **chr21 read-slice**, not a VCF subset.
+
+**Framing (per Jeremy):** Option A already validated stages 3→6 (vaccine construction).
+Option B is really **"test stage 2 in isolation"** (the genomics front-end) as a single
+gate, **then** run construction after — all in one notebook, with a marker where the
+stage-2 test ends.
+
+### Stage map for the run
+| stage | how it runs | tooling |
 |---|---|---|
-| Input | SEQC2 published HCC1395 somatic **truth-set VCF** (NCBI SEQC2 ftp) | `Seqc2SliceSource` → real reads (chr21) |
-| Toolchain to stand up | **VEP + Wildtype only** | **GATK Mutect2 *and* VEP+Wildtype**; must wire the deferred `produce()` |
-| Honest claim earned | "ranked a real tumour's real somatic mutation set, end-to-end" | "*called* and ranked somatic variants from real HCC1395 reads" |
-| Cost / risk | ~2 days, medium | ~3–4 days, higher |
+| 0 acquire | **executes** (`Seqc2SliceSource.ensure`) | `samtools view <url> chr21` on real SEQC2 tumor+normal BAMs |
+| 1 input | pre-aligned BAM → **sort+index only** (no aligner) | `samtools` — verified in `input_stage.py` (`["sort","index"]`) |
+| 2a variants | **transcribe `COMMAND_PLAN`** (stage raises by design) | GATK Mutect2 → FilterMutectCalls → `vep --plugin Wildtype` |
+| 2b HLA | executes, free | `KnownGenotypeTyper` (HCC1395 genotype in repo) |
+| 3→6 | executes (Option-A-validated) | MHCflurry + native — a `demos/integration_test.py` |
 
-**Recommendation: B1.** Variant *calling* (Mutect2) is the least scientifically
-interesting and most plumbing-heavy step; the published truth-set VCF still earns the
-"real tumour, end-to-end, no cherry-picking" claim. **B2 = stretch / "from reads" flex.**
+### Two facts that de-risk it (from reading the code 2026-07-15)
+- **No alignment step.** SEQC2 BAMs are already BWA-MEM aligned+indexed; a region-slice
+  of a sorted BAM stays sorted → stage 1 is sort+index, NOT bwa/STAR. Big toolchain cut.
+- **Transcription, not `produce()`.** Stages 1 and 2a deliberately raise
+  `NotImplementedError` **with a command plan** (design intent: "the Colab run is a
+  transcription, not a redesign"). So Part 1 transcribes the real Mutect2+VEP commands
+  into cells; we do NOT implement `produce()` as subprocess (untestable locally, against
+  the grain).
+
+### The real cost / risk (all in Part 1 setup)
+- **VEP + Wildtype plugin + ~15 GB GRCh38 cache** in Colab — the dominant fixed cost.
+- **GATK** install + a GRCh38 reference (`.fai`+`.dict`) for chr21.
+- **Contig naming** must agree across BAM / reference / VEP cache (`chr21` vs `21`).
+  Confirm FIRST: `samtools view -H <url> | grep @SQ | head`. Classic footgun.
+- Expect 2–3 Colab debug iterations (paths, contigs, cache flags). ~3–4 days.
+
+### Honest caveats to print in the output
+DNA-only (no RNA slice) → expression permissive; chr21-only → a real *slice* of the
+tumour, stated plainly (not the whole genome).
+
+## PARKED FOR LATER (extensions, not needed for the cold-email push)
+
+- **Full genome-wide run (drop the chr21 slice).** Once the VEP+GATK toolchain is
+  reliably stood up in Colab (the hard part), widen `region` beyond chr21 for the full
+  HCC1395 mutation count / a bigger ranked table. Pure scale-up of a known-good path.
+- **RNA / real expression.** SEQC2 tumor RNA is raw FASTQ (needs a STAR alignment), so
+  it's a separate follow-up; until then expression tagging (stage 3) stays permissive.
+- **B1 (skip-calling from the SEQC2 truth-set VCF)** remains a cheaper fallback if the
+  Mutect2 setup proves too costly in Colab — annotate the published truth VCF with
+  VEP+Wildtype and enter at stage 3. Not the plan, but the escape hatch.
 
 ## Caveat for BOTH runs (state honestly, don't fix)
 
