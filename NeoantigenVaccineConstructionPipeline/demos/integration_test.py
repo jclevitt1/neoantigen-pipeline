@@ -47,6 +47,7 @@ COLAB USAGE (see the notebook for the full Part-1 command transcription)
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from core import Pipeline
@@ -111,27 +112,34 @@ def assert_stage2_vcf(case) -> dict:
 
     text = vcf_path.read_text()
     header_declares_wt = False
+    csq_fields: list[str] = []       # the CSQ subfield order, read from the header
     records = 0
     records_with_wt = 0
     genes: set[str] = set()
 
     for line in text.splitlines():
         if line.startswith("##"):
-            if line.startswith("##INFO=<ID=CSQ") and _WILDTYPE_KEY in line:
-                header_declares_wt = True
+            if line.startswith("##INFO=<ID=CSQ"):
+                m = re.search(r"Format:\s*([^\">]+)", line)
+                if m:
+                    csq_fields = m.group(1).strip().split("|")
+                if _WILDTYPE_KEY in line:
+                    header_declares_wt = True
             continue
         if line.startswith("#") or not line.strip():
             continue
         records += 1
-        # crude but dependency-free: does this record's CSQ carry a WT protein value?
-        # (thorough field-by-field parsing lives in stage 3's native/vcf.py.)
+        # index CSQ subfields BY NAME (real VEP CSQ has ~26 fields in a fixed but
+        # non-trivial order — WildtypeProtein is NOT last, SYMBOL is NOT first).
+        wt_i = csq_fields.index(_WILDTYPE_KEY) if _WILDTYPE_KEY in csq_fields else -1
+        sym_i = csq_fields.index("SYMBOL") if "SYMBOL" in csq_fields else -1
         for field in line.split("\t")[7].split(";"):
             if field.startswith("CSQ="):
                 for tx in field[4:].split(","):
                     parts = tx.split("|")
-                    if parts and parts[0]:
-                        genes.add(parts[0])          # SYMBOL is CSQ field 0
-                    if parts and parts[-1].strip():  # WildtypeProtein is the last field
+                    if 0 <= sym_i < len(parts) and parts[sym_i]:
+                        genes.add(parts[sym_i])
+                    if 0 <= wt_i < len(parts) and parts[wt_i].strip():
                         records_with_wt += 1
 
     if not header_declares_wt:
