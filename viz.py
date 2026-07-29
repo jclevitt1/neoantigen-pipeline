@@ -167,7 +167,8 @@ text.elabel{fill:var(--skip);font-size:9.5px;font-family:ui-monospace,Menlo,mono
 .opt .otag{font-size:9px;text-transform:uppercase;letter-spacing:.5px;padding:1px 6px;border-radius:10px}
 .opt.active .otag{color:var(--native);border:1px solid #238636}
 .opt .otag.alt{color:var(--mut);border:1px solid var(--line2)}
-.opt .odoc{font-size:11px;color:var(--mut);line-height:1.5;margin-top:7px;white-space:pre-wrap}
+/* prose, not code: let it reflow instead of honouring the docstring's source wrapping */
+.opt .odoc{font-size:11px;color:var(--mut);line-height:1.5;margin-top:7px;white-space:normal}
 .flow{display:flex;flex-wrap:wrap;gap:6px}
 .nav{font-size:11px;padding:3px 9px;border:1px solid var(--line2);border-radius:6px;color:#c9d1d9;
      background:var(--panel2);cursor:pointer}

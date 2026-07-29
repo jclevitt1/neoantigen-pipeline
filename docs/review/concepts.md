@@ -73,7 +73,7 @@ nearest-self distance. Both are known next steps, not mysteries.
 This idle-recognition state isn't a defect unique to this pipeline — it's the honest
 state of the whole field (§5).
 
-## 5. Field context (for cold-email credibility)
+## 5. Field context
 
 - **Presentation is solved; recognition isn't.** On honest benchmarks
   (negatives = presented-but-non-immunogenic peptides), *every* immunogenicity tool
@@ -92,7 +92,7 @@ state of the whole field (§5).
   signal the standard peptide×MHC models are structurally blind to" — *not* a
   leaderboard "beat SOTA" claim (the absolute AUCs are small-N-noisy and were never run
   head-to-head). The feature claim is the defensible, interesting one, and it points
-  straight at TME-focused labs (Azizi, Han).
+  straight at labs working on the tumour microenvironment.
 - **Why the data ceiling is structural.** Immunogenicity depends on the patient's
   *private, unobserved* T-cell repertoire (TCR side of a pMHC×TCR interaction). You're
   predicting an interaction from one side only — an information ceiling that more

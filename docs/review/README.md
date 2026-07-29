@@ -1,4 +1,4 @@
-# Pre-cold-email review pack
+# Review pack
 
 _A self-contained walk-through of what this pipeline does, what was built and
 validated, and how to read its output — so you can review it cold before writing to
@@ -81,7 +81,7 @@ personalized vaccine*. It stops where silicon hands off to wet lab. Staged DAG
   assertions. Note that stage 4's self-test covers the recognition math only — the
   MHCflurry presentation calls are exercised in Colab, not by the test.
 
-## For the cold emails — claims you CAN defend, and what NOT to say
+## Claims this work supports — and what it does not
 
 **Defensible:**
 - "Built a modular, tested neoantigen-design pipeline and ran it end-to-end on real

@@ -22,6 +22,8 @@ actually unsolved — sits behind a clean interface where predictors can be swap
 compared. See [`docs/review/concepts.md`](docs/review/concepts.md) for the biology and
 [`docs/ranking_methodology.md`](docs/ranking_methodology.md) for the citations.
 
+![The pipeline as a DAG of typed stages](docs/img/pipeline_overview.png)
+
 ## The pipeline
 
 ```mermaid
@@ -51,10 +53,21 @@ gaining columns at each step; stage 5 flags and stage 6 gates on those flags.
 | 5 | eval | ranked + proteome | `filtered.tsv` (+flags) | native |
 | 6 | construct | filtered peptides | `construct.fasta` + `.json` | native |
 
-An interactive view of the graph — click a stage for its I/O, active strategy,
-alternatives, and live test status — is at
+The image above is a snapshot of an interactive view: click any stage and a drawer
+opens with its I/O, its live `self_test` status, and — where the stage has a pluggable
+seam — every alternative implementation with its own description, so "what is this
+stage using, and what else could it use?" is answerable without reading code.
+
+![Stage drawer showing the ranker seam and its alternatives](docs/img/pipeline_drawer.png)
+
+Everything in that view is derived from the pipeline object itself, so adding a stage
+or swapping a strategy updates it with no edits to the renderer. Open
 [`NeoantigenVaccineConstructionPipeline/pipeline_view.html`](NeoantigenVaccineConstructionPipeline/pipeline_view.html)
-(open locally; GitHub won't render it).
+locally (GitHub won't render it), or regenerate with:
+
+```bash
+python -m NeoantigenVaccineConstructionPipeline.cases.demo
+```
 
 ## Architecture
 

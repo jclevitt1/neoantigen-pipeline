@@ -36,8 +36,8 @@ class RankStage(Stage):
     edges, and delegates the science to a `Ranker`."""
     name = "4-rank"
     kind = "native"
-    description = ("Gate peptides on MHC presentation, then rank survivors on recognition "
-                   "(pluggable ranker; default: MHCflurry gate + Łuksza composite).")
+    description = ("Gate peptides on MHC presentation, then rank survivors on "
+                   "recognition (pluggable; default MHCflurry + Łuksza).")
 
     def __init__(self, case, ranker: Ranker | None = None):
         self.case = case

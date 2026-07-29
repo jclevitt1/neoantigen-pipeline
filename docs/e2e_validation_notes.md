@@ -1,8 +1,7 @@
-# E2E Validation Plan — notes for the cold-email push
+# End-to-end validation plan
 
 _Working notes (2026-07-14). Goal: convert the pipeline from "designed / unit-tested"
-to "demonstrably runs on real data" before cold-emailing Columbia labs (Azizi + Han
-first). Two complementary runs, done **separately**._
+to "demonstrably runs on real data". Two complementary runs, done **separately**._
 
 ## The two runs
 
@@ -48,7 +47,7 @@ stage 2. Rejected B1 (skip-calling) because the point is to prove the front-end,
 `Mutect2` is cheap here (pre-aligned BAMs, matched normal). One notebook, two clearly
 marked halves; the "subset" is the built-in **chr21 read-slice**, not a VCF subset.
 
-**Framing (per Jeremy):** Option A already validated stages 3→6 (vaccine construction).
+**Framing:** Option A already validated stages 3→6 (vaccine construction).
 Option B is really **"test stage 2 in isolation"** (the genomics front-end) as a single
 gate, **then** run construction after — all in one notebook, with a marker where the
 stage-2 test ends.
@@ -82,7 +81,7 @@ stage-2 test ends.
 DNA-only (no RNA slice) → expression permissive; chr21-only → a real *slice* of the
 tumour, stated plainly (not the whole genome).
 
-## PARKED FOR LATER (extensions, not needed for the cold-email push)
+## Parked for later (extensions, not needed for the current milestone)
 
 - **Full genome-wide run (drop the chr21 slice).** Once the VEP+GATK toolchain is
   reliably stood up in Colab (the hard part), widen `region` beyond chr21 for the full

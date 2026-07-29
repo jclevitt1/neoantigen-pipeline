@@ -2,7 +2,7 @@
 caller.py — the DEFAULT stage-2a source: GATK Mutect2 (call) + Ensembl VEP
 (annotate). This is the honest scientific path; its execution defers to Colab
 because it needs the aligned BAMs, the reference genome, and the VEP cache +
-Wildtype-protein plugin — none of which belong on a laptop in Da Nang.
+Wildtype-protein plugin — none of which belong on a laptop.
 
 We build the *contract* (inputs it declares, output format via write_annotated_vcf)
 and document the exact command plan, so the Colab run is a transcription, not a
