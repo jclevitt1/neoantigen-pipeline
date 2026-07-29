@@ -106,8 +106,12 @@ Being precise here, because the distinction matters:
   are exercised in the notebook, not by the test.
 - **Ranking half, end-to-end on real mutations.** A curated panel of real oncogenic
   hotspots (KRAS G12D/G12V, BRAF V600E, TP53 R175H, PIK3CA H1047R, EGFR L858R) runs
-  through windows → gate → composite → construct. Committed with outputs:
-  [`notebooks/option_A_component_test.ipynb`](notebooks/option_A_component_test.ipynb).
+  through windows → gate → composite → construct. **Every output file is committed**
+  with provenance in [`docs/review/run_outputs/`](docs/review/run_outputs/), so the
+  claims below can be checked against actual output rather than taken on trust. (The
+  Colab run in [`notebooks/`](notebooks/option_A_component_test.ipynb) is kept as a
+  record of the process, but its saved outputs predate a stage-6 fix — see the note at
+  the top of it.)
   **The built-in positive control passes** — KRAS G12D pairs to HLA-C\*08:02, the
   clinically validated restriction ([Tran et al., *NEJM* 2016](https://www.nejm.org/doi/full/10.1056/NEJMoa1609279)),
   and ranks first. Note that the demo HLA panel was *deliberately seeded* with the
@@ -134,8 +138,11 @@ The ones that would change how you read any output:
   dormant without an IEDB epitope set. Net: the score currently reduces to
   `ln(agretopicity)`. This mirrors the field's state, but don't read it as a full
   implementation of the Łuksza model.
-- **Construct selection has no per-mutation dedup**, so overlapping windows of a single
-  mutation can dominate the payload rather than maximizing mutation coverage.
+- **Construct selection is the weakest link.** It has no per-mutation dedup, so
+  overlapping windows of one mutation compete for slots rather than maximizing mutation
+  coverage; and it has no score floor, so peptides whose mutation made MHC binding
+  *worse* than wild-type — actively bad targets — still get selected. Both are visible
+  in the committed run: 7 peptides covering 4 mutations, 3 with negative scores.
 - **Clonality uses raw VAF** as a CCF proxy, uncorrected for purity or copy number.
 - **The autoimmunity filter is exact-match only.** Near-match cross-reactivity — the
   actual failure mode in the 2013 titin cardiotoxicity case, see
@@ -176,6 +183,7 @@ for breadth. Controlled-access dbGaP BAMs are routed around, not required.
 | `viz.py` | renders any Pipeline to the interactive HTML view |
 | `NeoantigenVaccineConstructionPipeline/stages/` | one package per stage, each with its own README |
 | `notebooks/` | executed end-to-end runs |
+| `docs/review/run_outputs/` | every file a real run produced, with provenance |
 | `docs/review/` | a cold-read walkthrough: what was built, how to read the output, the biology |
 | `docs/ranking_methodology.md` | why this ranker, with citations |
 | `docs/safety_testing.md` | what the autoimmunity filter does and doesn't cover |
