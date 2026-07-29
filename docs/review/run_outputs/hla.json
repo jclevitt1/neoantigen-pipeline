@@ -1,0 +1,12 @@
+{
+  "sample_id": "CURATED-DEMO",
+  "alleles": [
+    "HLA-A*02:01",
+    "HLA-A*11:01",
+    "HLA-B*07:02",
+    "HLA-B*08:01",
+    "HLA-C*07:01",
+    "HLA-C*08:02"
+  ],
+  "source": "KnownGenotypeTyper"
+}

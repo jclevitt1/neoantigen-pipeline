@@ -1,0 +1,24 @@
+{
+  "n_peptides": 7,
+  "peptides": [
+    "GADGVGKSAL",
+    "ARHGGWTTKM",
+    "ITDFGRAKLL",
+    "KIGDFGLATEK",
+    "ITDFGRAKL",
+    "VVVGADGVGK",
+    "KITDFGRAK"
+  ],
+  "linker": "AAY",
+  "order": "immunogenicity_desc (clonal-preferred tiebreak)",
+  "codon_table": "human_high_freq",
+  "construct_aa": "GADGVGKSALAAYARHGGWTTKMAAYITDFGRAKLLAAYKIGDFGLATEKAAYITDFGRAKLAAYVVVGADGVGKAAYKITDFGRAK",
+  "construct_nt": "GGCGCCGACGGCGTGGGCAAGAGCGCCCTGGCCGCCTACGCCCGCCACGGCGGCTGGACCACCAAGATGGCCGCCTACATCACCGACTTCGGCCGCGCCAAGCTGCTGGCCGCCTACAAGATCGGCGACTTCGGCCTGGCCACCGAGAAGGCCGCCTACATCACCGACTTCGGCCGCGCCAAGCTGGCCGCCTACGTGGTGGTGGGCGCCGACGGCGTGGGCAAGGCCGCCTACAAGATCACCGACTTCGGCCGCGCCAAG",
+  "omitted_for_mvp": [
+    "junctional-epitope minimization (linker/order optimization)",
+    "MHC-II (CD4 helper) epitopes",
+    "N-terminal signal peptide + C-terminal MHC-trafficking domain",
+    "mRNA scaffold: 5' cap, 5'/3' UTRs, poly-A tail, stop codon",
+    "nucleoside modification (N1-methylpseudouridine)"
+  ]
+}

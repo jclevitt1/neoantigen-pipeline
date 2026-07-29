@@ -34,3 +34,8 @@ venv/
 
 # --- OS ---
 .DS_Store
+
+# Exception: the small committed run artifacts that back the documented result.
+# Everything else derived stays ignored above.
+!docs/review/run_outputs/
+!docs/review/run_outputs/**
