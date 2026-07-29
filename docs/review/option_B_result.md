@@ -32,9 +32,13 @@ the presentation gate, **one neoepitope survives**, on two peptide lengths:
 | SPNSRIAL  | **COL6A1** | **N721S** | **HLA-B\*08:01** | 59.4 | **0.941** | pass | 1.043 | 0.042 |
 | SPNSRIALV | **COL6A1** | **N721S** | **HLA-B\*08:01** | 66.9 | **0.966** | pass | 1.036 | 0.036 |
 
-**The pipeline independently picked the right restriction:** COL6A1 N721S presents on
-**HLA-B\*08:01**, which is one of HCC1395's *actual* published class-I alleles. The
-mutation maps to three COL6A1 transcript isoforms (N721S in the canonical, N97S in two
+COL6A1 N721S presents best on **HLA-B\*08:01**. Note what this is and isn't: the ranker
+scores each peptide against the alleles it was given, so a best allele *from* HCC1395's
+real genotype is the only possible outcome, not a validation — and there is no published
+ground truth for COL6A1 N721S to check it against. The meaningful fact is simply that
+the chain ran on a real genotype rather than a synthetic one.
+
+The mutation maps to three COL6A1 transcript isoforms (N721S in the canonical, N97S in two
 shorter ones — the same genomic event), so each peptide appears once per isoform.
 
 ### Stage-6 construct

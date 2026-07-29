@@ -21,6 +21,9 @@ DEFAULT_TYPER = KnownGenotypeTyper
 
 
 class HlaTypeStage(Stage):
+    """Stage 2b - determine the patient's MHC class-I genotype (HLA-A/B/C). This is the
+    restriction set every downstream binding prediction is scored against; get it
+    wrong and every peptide score is wrong."""
     name = "2b-hla"
     kind = "adapter"
     description = "Type the patient's MHC-I alleles (HLA-A/B/C) from the normal sample."

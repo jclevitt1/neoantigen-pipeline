@@ -13,6 +13,8 @@ from core import Strategy
 
 
 class AcquireSource(Strategy):
+    """Seam: where the raw sample files come from - already on disk, or sliced out of
+    a remote archive over HTTP."""
     name: str = "unnamed-source"
     description: str = ""
 

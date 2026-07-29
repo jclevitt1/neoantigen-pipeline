@@ -18,6 +18,9 @@ from core import Strategy
 
 
 class Ranker(Strategy):
+    """Seam: how candidate peptides are scored and ordered. The most consequential
+    choice in the pipeline and the one most worth swapping - implementations range
+    from a bare presentation score to learned immunogenicity models."""
     name: str = "unnamed-ranker"
     description: str = ""
 

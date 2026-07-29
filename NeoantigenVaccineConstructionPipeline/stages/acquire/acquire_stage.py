@@ -20,6 +20,9 @@ from .base import AcquireSource
 
 
 class AcquireStage(Stage):
+    """Stage 0 - stage the three raw sample files (tumor DNA, normal DNA, tumor RNA)
+    into the case workdir: either verify on-disk copies or region-slice them out of
+    a remote archive, so nothing downstream has to know where the data came from."""
     name = "0-acquire"
     kind = "adapter"
     description = "Stage the three raw sample files (on-disk, or region-sliced from a remote source)."

@@ -12,6 +12,8 @@ from ... import checks
 
 
 class OnDiskSource(AcquireSource):
+    """Assume the case's raw files already exist on disk; verify each is present and
+    fail loudly if not. Zero network, zero cost - the default."""
     name = "on-disk"
     description = "Use raw sample files already present on disk / mounted storage (no download)."
 

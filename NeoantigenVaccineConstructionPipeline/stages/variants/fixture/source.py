@@ -38,7 +38,7 @@ DEMO_VARIANTS = [
 class FixtureVariants(VariantSource):
     """Emit DEMO_VARIANTS as an annotated VCF. Zero inputs; runs today.
 
-    Opt-in only: build the pipeline with `variant_source=FixtureVariants()` for a
+    Opt-in only: build the pipeline with `source=FixtureVariants(...)` for a
     tool-free end-to-end wiring run. The default source is the real Mutect2+VEP
     adapter."""
 

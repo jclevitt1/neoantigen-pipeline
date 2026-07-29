@@ -33,6 +33,9 @@ def _to_float(v):
 
 
 class LogisticTmeRanker(Ranker):
+    """L1-logistic ranker over peptide features plus a tumour-microenvironment proxy
+    (Model B from the sibling A/B test). Retired as the default: it still needs a
+    fitted pickle and the CIBERSORTx feature join, neither of which is in this repo."""
     name = "logistic-tme"
     description = "Model B: peptide + TME-proxy logistic immunogenicity. FILLER — modest AUC (~0.68), swap later."
 

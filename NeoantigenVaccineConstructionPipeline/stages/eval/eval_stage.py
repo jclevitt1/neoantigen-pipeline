@@ -18,6 +18,9 @@ _FLAG_COLS = ["peptide", "autoimmunity_flag", "clonality", "manufacturability"]
 
 
 class EvalStage(Stage):
+    """Stage 5 - flag each ranked peptide for autoimmunity risk, clonality, and
+    manufacturability. Deliberately flags rather than drops: stage 6 decides what the
+    flags mean, so the reasoning stays visible in the output."""
     name = "5-eval"
     kind = "native"
     description = "Filter peptides: autoimmunity, clonality, manufacturability. Gates the construct."

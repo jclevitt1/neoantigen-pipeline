@@ -25,6 +25,9 @@ from ..base import Ranker
 
 
 class BigMHcImRanker(Ranker):
+    """Adapter for BigMHC-IM, a transfer-learned immunogenicity predictor. Not
+    implemented - declared so the seam documents the intended comparison rather than
+    hiding it in a TODO."""
     name = "bigmhc-im"
     description = ("Optional: BigMHC_IM transfer-learning immunogenicity (academic "
                    "licence, ~5 GB clone, GPU-friendly). Highest reported precision.")

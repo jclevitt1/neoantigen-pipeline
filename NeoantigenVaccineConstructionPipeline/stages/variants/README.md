@@ -61,4 +61,4 @@ to wire/test the rest of the pipeline.
 - [`fixture/`](fixture/) — **opt-in, native**: a labelled *didactic* variant
   (KRAS G12D on the real KRAS protein — **not** a sample measurement). Zero
   inputs, runs today, for a tool-free end-to-end run. Pass
-  `variant_source=FixtureVariants()`.
+  `source=FixtureVariants(...)`.

@@ -21,6 +21,9 @@ _OUT_COLS = ["peptide", "wt_peptide", "tpm", "gene", "transcript", "protein_chan
 
 
 class CandidateStage(Stage):
+    """Stage 3 - translate each protein-altering variant into the 8-11mer peptide
+    windows that cover the mutated residue, each paired with its wild-type
+    counterpart (so stage 4 can compute agretopicity) and tagged with expression."""
     name = "3-candidates"
     kind = "native"
     description = "Translate mutations into mutant peptides (8-11mers), tagged with RNA expression."

@@ -26,6 +26,8 @@ UNKNOWN_TPM = "NA"
 
 
 class ExpressionSource(Strategy):
+    """Seam: where per-gene expression (TPM) comes from when tagging candidate peptides.
+    A mutation in a silent gene makes no protein, so there is nothing to present."""
     @abstractmethod
     def tpm_for(self, gene: str, transcript: str) -> str | float:
         """TPM for a gene/transcript, or UNKNOWN_TPM if not determinable."""

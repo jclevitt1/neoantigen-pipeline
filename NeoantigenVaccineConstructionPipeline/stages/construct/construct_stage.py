@@ -19,6 +19,9 @@ from .string_of_beads import builder
 
 
 class ConstructStage(Stage):
+    """Stage 6 - assemble the surviving peptides into a linker-joined polypeptide and a
+    codon-optimized nucleotide ORF. This is the actual vaccine construct, and the
+    point where the pipeline hands off to the wet lab."""
     name = "6-construct"
     kind = "native"
     description = "Assemble surviving peptides (+linkers, codon-optimized) into a vaccine construct."

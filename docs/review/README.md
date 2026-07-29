@@ -30,13 +30,22 @@ personalized vaccine*. It stops where silicon hands off to wet lab. Staged DAG
 - **Ran the ranking back half (stages 3→6) end-to-end on real mutations** (Option A
   component test, in Colab). Fed a curated panel of real oncogenic hotspots
   (KRAS G12D/G12V, BRAF V600E, TP53 R175H, PIK3CA H1047R, EGFR L858R) through
-  windows → presentation gate → composite → vaccine construct. **It ran clean and the
-  biology came out right:**
+  windows → presentation gate → composite → vaccine construct. **It ran clean, and the
+  built-in positive control passed:**
   - **#1 hit: KRAS G12D on HLA-C\*08:02** — the *real, clinically-validated*
     restriction (Tran/Rosenberg, NEJM 2016, where TILs against exactly this
-    neoantigen shrank a tumour). The pipeline surfaced it independently, at the top.
+    neoantigen drove regression of all seven lung metastases).
+  - **This is a positive control, not a discovery.** `DEMO_HLA_PANEL`
+    ([`curated.py`](../../NeoantigenVaccineConstructionPipeline/stages/variants/fixture/curated.py))
+    was *deliberately built* to contain the published restricting alleles for these
+    hotspots, and the ranker picks the best allele from the genotype it is given. What
+    the run demonstrates is that, given a 6-allele genotype and 6 hotspot mutations,
+    MHCflurry recovered the correct peptide–allele pairing and the composite ranked it
+    first — the control behaved as designed. It does **not** show the pipeline finding
+    a restriction nobody told it about.
   - **#2: PIK3CA H1047R** (the single most common PIK3CA driver mutation).
-  - KRAS G12V correctly presented on **HLA-A\*11:01** (also its real restriction).
+  - KRAS G12V likewise recovered on **HLA-A\*11:01** (also its real restriction, also
+    seeded into the panel).
   - See the captured table in [`output_glossary.md`](output_glossary.md).
 
 - **A separate statistical result (the "abtest"):** a logistic regression showed that
@@ -60,19 +69,33 @@ personalized vaccine*. It stops where silicon hands off to wet lab. Staged DAG
     [`concepts.md`](concepts.md)). This mirrors the field: recognition is the weak,
     half-solved axis everywhere, not just here.
 - **Expression** ran permissive in Option A (no RNA data → unknown TPM survives).
-- **Option B** (full HCC1395 tumour, end-to-end from a real VCF) is planned but not
-  yet run — see [`../e2e_validation_notes.md`](../e2e_validation_notes.md).
+- **Option B** (HCC1395, from the published SEQC2 somatic truth VCF, chr21) **was run**
+  on 2026-07-17 — results and caveats in [`option_B_result.md`](option_B_result.md).
+  **Caveat on the evidence:** it ran out-of-tree in an ephemeral sandbox, and **no
+  artifacts were committed** — no notebook outputs, no `ranked.tsv`/`construct.fasta`,
+  no command log — and the exact procedure used (VEP in GFF+FASTA mode, a byte-range
+  chr21 reference extract, `gffread` splicing the WT protein back into the CSQ) is not
+  in the repo. Treat it as a reported result that is **not currently reproducible**,
+  including by me. Reproducing it is tracked work.
+- **Only one stage lacks a self-test:** `0-acquire`. The other seven carry hard fixture
+  assertions. Note that stage 4's self-test covers the recognition math only — the
+  MHCflurry presentation calls are exercised in Colab, not by the test.
 
 ## For the cold emails — claims you CAN defend, and what NOT to say
 
 **Defensible:**
 - "Built a modular, tested neoantigen-design pipeline and ran it end-to-end on real
-  mutations; it independently surfaces clinically-validated neoantigens (KRAS G12D on
-  C\*08:02) at the top."
+  mutations. My positive control — a curated hotspot panel with the published
+  restricting alleles in the genotype — comes back correct: KRAS G12D pairs to
+  C\*08:02 and ranks first."
 - "A coarse TME proxy adds *statistically significant* orthogonal signal for
   immunogenicity (paired DeLong p<0.001)."
 - "I benchmarked on the *hard* task — presented-but-non-immunogenic negatives — where
   the field sits ~0.6, not the leaky ~0.88 benchmarks."
+
+**Do NOT claim:** that the pipeline *discovered* the KRAS G12D → C\*08:02 restriction.
+The allele panel was seeded with it; recovering it is a passing control, and calling it
+anything more is the first thing a reviewer will catch when they open `curated.py`.
 
 **Do NOT claim:** "beat SOTA." The absolute AUCs are small-N-noisy and were never run
 head-to-head against other models on one fixed split. The *feature* finding (TME adds

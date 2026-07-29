@@ -27,6 +27,9 @@ _NEG_INF = float("-inf")
 
 
 class MhcflurryPresentationRanker(Ranker):
+    """Rank by MHCflurry 2.0 presentation score alone - Axis 1 only, no recognition
+    modelling and no tunables. The simplest defensible ranker, and a useful control
+    for whether the recognition composite is adding anything."""
     name = "mhcflurry-presentation"
     description = ("Axis 1 only: order by MHCflurry 2.0 eluted-ligand presentation "
                    "score. Drop-in replacement for the logistic filler.")
@@ -53,6 +56,10 @@ class MhcflurryPresentationRanker(Ranker):
 
 
 class LukszaCompositeRanker(Ranker):
+    """Gate on MHCflurry presentation, then rank the survivors by a Luksza-style
+    recognition composite (agretopicity, dissimilarity-to-self, foreignness). Gating
+    first because recognition features are meaningless on peptides that are never
+    presented. The current default."""
     name = "luksza-composite"
     description = ("Gate on MHCflurry presentation + expression, then rank survivors "
                    "by the Luksza quality composite (agretopicity × dissimilarity-to-self).")

@@ -1,11 +1,12 @@
 """
 Stage 4 — Rank.  (NATIVE; contract + orchestration)
 
-candidate peptides + HLA alleles -> MHC binding + immunogenicity scores, sorted.
+candidate peptides + HLA alleles -> presentation-gated, recognition-ranked scores.
 This is the differentiated core. The scoring itself is pluggable: this stage owns
 the file I/O and delegates to a `Ranker` (base.py + the approach subdirs). The
-default is the logistic TME model — a documented filler, swappable without
-touching this Stage. See stages/rank/README.md.
+default is `LukszaCompositeRanker` — an MHCflurry presentation gate followed by a
+Łuksza-style recognition composite — swappable without touching this Stage.
+See stages/rank/README.md.
 """
 from __future__ import annotations
 
@@ -30,9 +31,13 @@ def _read_alleles(hla_json_path) -> list[str]:
 
 
 class RankStage(Stage):
+    """Stage 4 - score and order the candidate peptides. This is the differentiated
+    core, so the scoring itself is pluggable: the Stage owns file I/O and the DAG
+    edges, and delegates the science to a `Ranker`."""
     name = "4-rank"
     kind = "native"
-    description = "Score peptides by MHC binding + immunogenicity (pluggable ranker; default: logistic TME)."
+    description = ("Gate peptides on MHC presentation, then rank survivors on recognition "
+                   "(pluggable ranker; default: MHCflurry gate + Łuksza composite).")
 
     def __init__(self, case, ranker: Ranker | None = None):
         self.case = case

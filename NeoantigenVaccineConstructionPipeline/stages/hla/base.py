@@ -34,6 +34,9 @@ def validate_alleles(alleles) -> None:
 
 
 class HlaTyper(Strategy):
+    """Seam: how the patient's class-I HLA genotype is determined - inferred from
+    the normal reads, or taken from a published genotype when the sample is a
+    characterized cell line."""
     @abstractmethod
     def type(self, case) -> list[str]:
         """Return the patient's MHC-I alleles, e.g. ['HLA-A*29:02', 'HLA-B*08:01', ...]."""

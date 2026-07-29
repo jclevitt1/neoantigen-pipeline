@@ -21,6 +21,9 @@ _RAW_EXTS = [".bam", ".cram", ".fastq", ".fq", ".fastq.gz", ".fq.gz", ".sra"]
 
 
 class InputStage(Stage):
+    """Stage 1 - normalize whatever the raw files happen to be (aligned BAM, CRAM, or
+    FASTQ) into three sorted, indexed BAMs. Owns the branch table and emits concrete
+    samtools/bwa/STAR commands; tool execution is deferred."""
     name = "1-input"
     kind = "adapter"
     description = "Normalize raw sequencing (FASTQ/BAM/CRAM) into three aligned BAMs."

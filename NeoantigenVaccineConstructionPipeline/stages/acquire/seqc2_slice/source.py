@@ -48,6 +48,9 @@ def seqc2_wes_dna_manifest(center: str = "EA", tumor_rep: int = 1,
 
 
 class Seqc2SliceSource(AcquireSource):
+    """Pull one genomic region out of the public SEQC2 benchmark BAMs over HTTP
+    (`samtools view <url> <region>`), so a chr21 slice costs megabytes instead of
+    downloading the whole indexed BAM."""
     name = "seqc2-slice"
     description = "Region-slice remote SEQC2 aligned BAMs (samtools view <url> <region>); no full download."
 

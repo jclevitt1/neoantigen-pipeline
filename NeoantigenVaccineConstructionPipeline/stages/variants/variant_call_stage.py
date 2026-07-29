@@ -28,6 +28,9 @@ DEFAULT_SOURCE = Mutect2VepCaller
 
 
 class VariantCallStage(Stage):
+    """Stage 2a - the tumor-minus-normal diff: somatic variants called against the
+    matched normal, annotated with protein consequences and the wild-type protein
+    (stage 3 needs the WT sequence to build mutant/WT peptide pairs)."""
     name = "2a-variants"
     kind = "adapter"
     description = "The 'diff': somatic variants (tumor - normal), annotated with protein consequences."
